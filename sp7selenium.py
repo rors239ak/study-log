@@ -157,8 +157,8 @@ else:
 
 
  #メールを送るための下準備
-my_email = "me"#送り元例
-your_email = "your"#送り先例
+my_email = os.getenv("me")#送り元例
+your_email = os.getenv("your")#送り先例
  # 送り元と送り先はどっちも同じ自分のメールアドレスでもOK
 
 
