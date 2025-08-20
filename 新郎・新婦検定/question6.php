@@ -11,30 +11,49 @@ if (!isset($_SESSION['question5'])) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
   <title>新郎・新婦検定</title>
 </head>
 <body>  
   <header>
-    <a href=""><img src="" alt=""></a> <!-- ロゴとホームへ戻るリンク -->
+    <a href="index.php"><img src="image/image.png" alt="ロゴ" class="logo"></a> 
   </header>
 
   <main>
     <h1>6問目</h1>
-    <p>新郎の好きな新婦のご飯は？
-    </p>
-    <form action="check6.php" method="post">
-      <input type="radio" name="question6" value="春巻き">春巻き<br>
-      <input type="radio" name="question6" value="肉じゃが">肉じゃが<br>
-      <input type="radio" name="question6" value="オムライス">オムライス<br>
-      <input type="radio" name="question6" value="カルボナーラ">カルボナーラ<br>
-      <input type="submit" value="次へ">
-    </form>
-    <p><a href="index.php">最初に戻る</a></p>
+    <div class="center">
+      <p class="p">新郎と新婦の出会いの場はどこでしょう？
+      </p>
+      <form action="check6.php" method="post" class="in_form">
+        <p>
+          <label>
+            <input type="radio" name="question6" value="焼肉屋">焼肉屋
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type="radio" name="question6" value="バー">バー
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type="radio" name="question6" value="ビアガーデン">ビアガーデン
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type="radio" name="question6" value="ネットゲーム">ネットゲーム
+          </label>
+        </p>
+        <input type="submit" value="次へ" class="next">
+      </form>
+    </div>
+    <p class="home"><a href="index.php">最初に戻る</a></p>
   </main>
   </main>
 
   <footer>
-    <a href=""><img src="" alt=""></a> <!-- ロゴとホームへ戻るリンク -->
+    <a href="index.php"><img src="image/image.png" alt="ロゴ" class="logo"></a> 
   </footer>
 </body>
 </html>

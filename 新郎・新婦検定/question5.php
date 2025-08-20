@@ -11,33 +11,49 @@ if (!isset($_SESSION['question4'])) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
   <title>新郎・新婦検定</title>
 </head>
 <body>  
   <header>
-    <a href=""><img src="" alt=""></a> <!-- ロゴとホームへ戻るリンク -->
+    <a href="index.php"><img src="image/image.png" alt="ロゴ" class="logo"></a> 
   </header>
 
   <main>
     <h1>5問目</h1>
-    <p>新婦の好きな花は？
-    </p>
-    <form action="check5.php" method="post">
-      <input type="radio" name="question5" value="バラ">バラ<br>
-      <input type="radio" name="question5" value="朝顔">朝顔<br>
-      <input type="radio" name="question5" value="ゆり">ゆり<br>
-      <input type="radio" name="question5" value="ひまわり">ひまわり<br>
-
-      <p class="last_check">これで問題は以上となります。<br>
-        答えのボタンを押すとすぐに点数が出ます。</p>
-      <input type="submit" value="答え">
-    </form>
-    <p><a href="index.php">最初に戻る</a></p>
+    <div class="center">
+      <p class="p">新婦の好きな花は？
+      </p>
+      <form action="check5.php" method="post" class="in_form">
+        <p>
+          <label>
+            <input type="radio" name="question5" value="バラ">バラ
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type="radio" name="question5" value="朝顔">朝顔
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type="radio" name="question5" value="ゆり">ゆり
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type="radio" name="question5" value="ひまわり">ひまわり
+          </label>
+        </p>
+        <input type="submit" value="次へ" class="next">
+      </form>
+    </div>
+    <p class="home"><a href="index.php">最初に戻る</a></p>
   </main>
   </main>
 
   <footer>
-    <a href=""><img src="" alt=""></a> <!-- ロゴとホームへ戻るリンク -->
+    <a href="index.php"><img src="image/image.png" alt="ロゴ" class="logo"></a> 
   </footer>
 </body>
 </html>
