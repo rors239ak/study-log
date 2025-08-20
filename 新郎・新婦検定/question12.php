@@ -1,8 +1,8 @@
 <?php
 session_start();
-// 直アクセス防止：question2が未回答なら戻す
-if (!isset($_SESSION['question2'])) {
-  header('Location: question2.php');
+// 直アクセス防止：question11が未回答なら戻す
+if (!isset($_SESSION['question11'])) {
+  header('Location: question11.php');
   exit;
 }
 ?>
@@ -20,32 +20,34 @@ if (!isset($_SESSION['question2'])) {
   </header>
 
   <main>
-    <h1>3問目</h1>
+    <h1>12問目</h1>
     <div class="center">
-      <p class="p">新婦と新婦の喧嘩の時に新婦が最初にとる行動は？
+      <p class="p">新郎の好きな新婦のご飯は？
       </p>
-      <form action="check3.php" method="post" class="in_form">
+      <form action="check12.php" method="post" class="in_form">
         <p>
           <label>
-            <input type="radio" name="question3" value="謝罪">謝罪
+            <input type="radio" name="question12" value="春巻き">春巻き
           </label>
         </p>
         <p>
           <label>
-            <input type="radio" name="question3" value="家出">家出
+            <input type="radio" name="question12" value="肉じゃが">肉じゃが
           </label>
         </p>
         <p>
           <label>
-            <input type="radio" name="question3" value="無視">無視
+            <input type="radio" name="question12" value="オムライス">オムライス
           </label>
         </p>
         <p>
           <label>
-            <input type="radio" name="question3" value="爆買い">爆買い
+            <input type="radio" name="question12" value="カルボナーラ">カルボナーラ
           </label>
         </p>
-        <input type="submit" value="次へ" class="next">
+        <p class="last_check">これで問題は以上となります。<br>
+          答えのボタンを押すとすぐに点数が出ます。</p>
+        <input type="submit" value="答え" class="anser">
       </form>
     </div>
     <p class="home"><a href="index.php">最初に戻る</a></p>

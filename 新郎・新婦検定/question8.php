@@ -1,8 +1,8 @@
 <?php
 session_start();
-// 直アクセス防止：question2が未回答なら戻す
-if (!isset($_SESSION['question2'])) {
-  header('Location: question2.php');
+// 直アクセス防止：question7が未回答なら戻す
+if (!isset($_SESSION['question7'])) {
+  header('Location: question7.php');
   exit;
 }
 ?>
@@ -20,29 +20,29 @@ if (!isset($_SESSION['question2'])) {
   </header>
 
   <main>
-    <h1>3問目</h1>
+    <h1>8問目</h1>
     <div class="center">
-      <p class="p">新婦と新婦の喧嘩の時に新婦が最初にとる行動は？
+      <p class="p">新婦のやめられないものは？
       </p>
-      <form action="check3.php" method="post" class="in_form">
+      <form action="check8.php" method="post" class="in_form">
         <p>
           <label>
-            <input type="radio" name="question3" value="謝罪">謝罪
+            <input type="radio" name="question8" value="推し活">推し活
           </label>
         </p>
         <p>
           <label>
-            <input type="radio" name="question3" value="家出">家出
+            <input type="radio" name="question8" value="アイス">アイス
           </label>
         </p>
         <p>
           <label>
-            <input type="radio" name="question3" value="無視">無視
+            <input type="radio" name="question8" value="カラオケ">カラオケ
           </label>
         </p>
         <p>
           <label>
-            <input type="radio" name="question3" value="爆買い">爆買い
+            <input type="radio" name="question8" value="お酒">お酒
           </label>
         </p>
         <input type="submit" value="次へ" class="next">

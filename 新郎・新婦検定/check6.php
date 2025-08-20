@@ -11,5 +11,5 @@ if (!isset($_POST['question6'])) {
 $_SESSION['question6'] = $_POST['question6'];
 $_SESSION['question_count'] += 1;
 // 次のページへ
-header('Location: end.php');
+header('Location: question7.php');
 exit;

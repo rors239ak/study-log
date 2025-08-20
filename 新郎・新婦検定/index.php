@@ -11,22 +11,24 @@ $_SESSION["question_count"] = 0; ?>
 </head>
 <body>  
   <header>
-    <a href=""><img src="" alt=""></a> <!-- ロゴとホームへ戻るリンク -->
+    <a href="index.php"><img src="image/image.png" alt="ロゴ" class="logo"></a> 
   </header>
 
   <main>
     <h1>新郎・新婦検定</h1>
-    <form action="start.php" method="post">
-      <label>名前
-      <input type="text" class="textbox" name="name">
-      <p>下の【スタート】を押すと問題が4択で表示されますので、できるだけ早くお答えください。<br>なお、【スタート】を押してから【終了】を押すまでの時間が計測されていますのでそれによって点数も変わってきます。</p> 
-      <p>それでは準備はいいですか？</p>
-      <button class="btn" type="submit">スタート</button>
-    </form></label>
+      <form action="start.php" method="post">
+        <div class="name1"><p class="name">名前</p>
+        <input type="text" class="textbox" name="name"></div>
+          <div class="center">
+            <p>下の【スタート】を押すと問題が4択で表示されますので、できるだけ早くお答えください。<br>なお、【スタート】を押してから【終了】を押すまでの時間が計測されていますのでそれによって点数も変わってきます。</p> 
+            <p>それでは準備はいいですか？</p>
+            <button class="btn" type="submit">スタート</button>
+          </div>
+      </form>
   </main>
 
   <footer>
-    <a href=""><img src="" alt=""></a> <!-- ロゴとホームへ戻るリンク -->
+    <a href="index.php"><img src="image/image.png" alt="ロゴ" class="logo"></a> 
   </footer>
 </body>
 </html>
