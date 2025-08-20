@@ -10,7 +10,7 @@ if (!isset($_POST['question1'])) {
 
 // セッションに保存
 $_SESSION['question1'] = $_POST['question1'];
-
+$_SESSION['question_count'] += 1;
 
 // 次のページへ
 header('Location: question2.php');
