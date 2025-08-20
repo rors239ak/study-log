@@ -7,7 +7,7 @@ session_start();
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>選択クイズ</title>
+  <title>新郎・新婦検定</title>
 </head>
 <body>  
   <header>

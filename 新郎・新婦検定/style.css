@@ -1,0 +1,25 @@
+h1{
+  display: flex;
+  text-align: center;
+  flex-direction: column;
+}
+
+label{
+  display: flex;
+  text-align: center;
+  flex-direction: column;
+  align-items: center;
+}
+
+.textbox{
+  width :150px;
+}
+
+.btn{
+  width: 80px;
+}
+
+main{
+  background-color: rgb(243, 202, 206);
+  padding: 20px 10px 30px 10px ;
+}

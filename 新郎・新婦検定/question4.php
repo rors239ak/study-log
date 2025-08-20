@@ -11,7 +11,7 @@ if (!isset($_SESSION['question3'])) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>選択クイズ</title>
+  <title>新郎・新婦検定</title>
 </head>
 <body>  
   <header>
@@ -27,10 +27,7 @@ if (!isset($_SESSION['question3'])) {
       <input type="radio" name="question4" value="ニキ・ネキ">ニキ・ネキ<br>
       <input type="radio" name="question4" value="にゃんちゅう">にゃんちゅう<br>
       <input type="radio" name="question4" value="なんちゃって">なんちゃって<br>
-
-      <p class="last_check">これで問題は以上となります。<br>
-        答えのボタンを押すとすぐに点数が出ます。</p>
-      <input type="submit" value="答え">
+      <input type="submit" value="次へ">
     </form>
     <p><a href="index.php">最初に戻る</a></p>
   </main>
