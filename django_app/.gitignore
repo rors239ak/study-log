@@ -1,0 +1,5 @@
+# Django関連でコミットしない方がいいファイル
+*.sqlite3
+/django_app/django_app/settings.py
+__pycache__/
+*.pyc
