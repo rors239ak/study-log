@@ -2,6 +2,8 @@ from django.shortcuts import render
 from .models import Friend
 from django.shortcuts import redirect
 from .forms import FriendForm
+from django.views.generic import ListView
+from django.views.generic import DetailView
 # Create your views here.
 
 def index(request):
@@ -48,5 +50,11 @@ def delete(request, num):
     "obj": friend,
   }
   return render(request, "hello/delete.html", params)
+
+class FriendList(ListView):
+  model = Friend
+
+class FriendDetail(DetailView):
+  model = Friend
 
 
