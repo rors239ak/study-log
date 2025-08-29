@@ -1,8 +1,8 @@
 from django.shortcuts import render
-from django.http import HttpResponse
-from django.views.generic import TemplateView
+
+
 from .models import Friend
-from django.db.models import QuerySet
+
 from django.shortcuts import redirect
 from .forms import FriendForm
 
