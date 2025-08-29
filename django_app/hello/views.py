@@ -1,8 +1,5 @@
 from django.shortcuts import render
-
-
 from .models import Friend
-
 from django.shortcuts import redirect
 from .forms import FriendForm
 
