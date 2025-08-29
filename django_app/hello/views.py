@@ -12,7 +12,6 @@ def index(request):
   }
   return render(request, "hello/index.html", params)
    
-  
 def create(request):
   if (request.method == "POST"):
     obj = Friend()
