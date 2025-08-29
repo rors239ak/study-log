@@ -1,11 +1,7 @@
 from django.shortcuts import render
-from django.http import HttpResponse
-from django.views.generic import TemplateView
 from .models import Friend
-from django.db.models import QuerySet
 from django.shortcuts import redirect
 from .forms import FriendForm
-
 # Create your views here.
 
 def index(request):
@@ -16,7 +12,6 @@ def index(request):
   }
   return render(request, "hello/index.html", params)
    
-  
 def create(request):
   if (request.method == "POST"):
     obj = Friend()
