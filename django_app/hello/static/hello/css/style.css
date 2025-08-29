@@ -1,0 +1,17 @@
+body{
+  background-color: aqua;
+
+}
+h1{
+  font-weight: bold;
+  color: blue;
+  opacity: 0.2;
+  text-align: center;
+}
+p{
+  margin: 10px;
+}
+a{
+  color: blue;
+  text-decoration: none;
+}
