@@ -1,0 +1,37 @@
+{% load static%}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.css" rel="stylesheet" crossorigin="anonymous">
+</head>
+<body class="container">
+  <h1 class="display-4 text-primary mb-4">Friend List</h1>
+  <table class="table">
+    <tr>
+      <th>id</th><th>{{ object.id }}</th>
+    </tr>
+    <tr>
+      <th>name</th>
+      <td>{{object.name}}</td>
+    <tr>
+      <th>mail</th>
+      <td>{{ object.mail }}</td>
+    </tr>
+    <tr>
+      <th>gender</th>
+      <td>{{ object.gender }}</td>
+    </tr>
+    <tr>
+      <th>age</th>
+      <td>{{ object.age }}</td>
+    </tr>
+    <tr>
+      <th>birthday</th>
+      <td>{{ object.birthday }}</td>
+    </tr>
+  </table>
+</body>
+</html>
