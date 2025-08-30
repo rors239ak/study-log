@@ -4,7 +4,6 @@ from django.shortcuts import redirect
 from django.views.generic import ListView
 from django.views.generic import DetailView
 from .forms import FindForm
-from django.db.models import Q
 # Create your views here.
 
 def index(request):
@@ -62,7 +61,8 @@ def find(request):
   if (request.method == 'POST'):
     form = FindForm(request.POST)
     find = request.POST["find"]
-    data = Friend.objects.filter(Q(name__contains=find)|Q(mail__contains=find))
+    list = find.split()
+    data = Friend.objects.filter(name__in=list)
     msg = "serch Result: "
   else:
     msg = "serch words..."
