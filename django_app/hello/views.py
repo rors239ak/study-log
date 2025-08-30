@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from .models import Friend
 from django.shortcuts import redirect
-from .forms import FriendForm
 from django.views.generic import ListView
 from django.views.generic import DetailView
+from .forms import FindForm
 # Create your views here.
 
 def index(request):
@@ -57,4 +57,20 @@ class FriendList(ListView):
 class FriendDetail(DetailView):
   model = Friend
 
-
+def find(request):
+  if (request.method == 'POST'):
+    form = FindForm(request.POST)
+    find = request.POST["find"]
+    data = Friend.objects.filter(name__contains=find)
+    msg = "Result: " + str(data.count())
+  else:
+    msg = "serch words..."
+    form = FindForm()
+    data = Friend.objects.all()
+  params = {
+    "title": "Hello",
+    "message": msg,
+    "form": form,
+    "data":data,
+  }
+  return render(request, "hello/find.html", params)
