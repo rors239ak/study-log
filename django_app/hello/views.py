@@ -4,12 +4,21 @@ from django.shortcuts import redirect
 from django.views.generic import ListView
 from django.views.generic import DetailView
 from .forms import FindForm
+from django.db.models import Count,Sum,Avg, Min,Max
 # Create your views here.
 
 def index(request):
-  data = Friend.objects.all().order_by("age").reverse()
+  data = Friend.objects.all()
+  re1 = Friend.objects.aggregate(Count("age"))
+  re2 = Friend.objects.aggregate(Sum("age"))
+  re3 = Friend.objects.aggregate(Avg("age"))
+  re4 = Friend.objects.aggregate(Min("age"))
+  re5 = Friend.objects.aggregate(Max("age"))
+  msg = "count:" + str(re1["age__count"]) + "<br>Sum:" + str(re2["age__sum"]) + "<br>Average:" + str(re3["age__avg"]) \
+  + "<br>Min:" + str(re4["age__min"]) + "<br>Max:" + str(re5["age__max"])
   params = {
     "title": "Hello",
+    "message":msg,
     "data": data,
   }
   return render(request, "hello/index.html", params)
