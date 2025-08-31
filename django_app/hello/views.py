@@ -3,8 +3,9 @@ from .models import Friend
 from django.shortcuts import redirect
 from django.views.generic import ListView
 from django.views.generic import DetailView
-from .forms import FindForm
+# from .forms import FindForm
 from django.db.models import Count,Sum,Avg, Min,Max
+from .forms import CheckForm
 # Create your views here.
 
 def index(request):
@@ -86,4 +87,19 @@ def find(request):
     "data":data,
   }
   return render(request, "hello/find.html", params)
+
+def check(request):
+  params = {
+    "title": "Hello",
+    "message": "check validation.",
+    "form": CheckForm(),
+  }
+  if (request.method == "POST"):
+    form = CheckForm(request.POST)
+    params["form"] = form
+    if (form.is_valid()):
+      params["message"] = "OK!"
+    else:
+      params["message"] = "no good."
+  return render(request, "hello/check.html", params)
 
