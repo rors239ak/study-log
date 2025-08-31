@@ -7,7 +7,7 @@ from .forms import FindForm
 # Create your views here.
 
 def index(request):
-  data = Friend.objects.all()
+  data = Friend.objects.all().order_by("age").reverse()
   params = {
     "title": "Hello",
     "data": data,
@@ -62,7 +62,7 @@ def find(request):
     form = FindForm(request.POST)
     find = request.POST["find"]
     list = find.split()
-    data = Friend.objects.filter(name__in=list)
+    data = Friend.objects.all()[int(list[0]):int(list[1])]
     msg = "serch Result: "
   else:
     msg = "serch words..."
