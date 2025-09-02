@@ -8,11 +8,11 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.css" rel="stylesheet" crossorigin="anonymous">
 </head>
 <body class="container">
-  <h1 class="display-4 text-primary mb-4">{{title}}</h1>
+  <h1 class="display-4 text-primary">{{title}}</h1>
   <p>{{message|safe}}</p>
   <table class="table">
     <tr>
-      <th>data</th><th>name</th><th>age</th><th>mail</th><th>birthday</th>
+      <th>id</th><th>name</th><th>age</th><th>mail</th><th>birthday</th><th>Message</th>
     </tr>
   {% for item in data %}
     <tr>
@@ -21,6 +21,13 @@
       <td>{{item.age}}</td>
       <td>{{item.mail}}</td>
       <td>{{item.birthday}}</td>
+      <td>
+        <ul>
+          {% for ob in item.message_set.all %}
+            <li>{{ob.title}}</li>
+          {% endfor %}
+        </ul>
+      </td>
     </tr>
   {% endfor %}
   </table>
