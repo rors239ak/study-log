@@ -8,23 +8,24 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.css" rel="stylesheet" crossorigin="anonymous">
 </head>
 <body class="container">
-  <h1 class="display-4 text-primary mb-4">{{title}}</h1>
-  <form action="{% url 'message' %}" method="post">
+  <h1 class="display-4 text-primary">{{title}}</h1>
+    <form action="{% url 'message' %}" method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <input type="submit" value="send" class="btn btn-primary">
-  </form>
-  <div class="mt-5"></div>
-  <table class="table">
-    <tr>
-      <th class="py-1">title</th><th class="py-1">name</th><th class="py-1">datetime</th>
-    </tr>
-  {% for item in data %}
-    <tr>
-      <th class="py-2">{{item.title}}</th><th class="py-2">{{item.friend.name}}</th><th class="py-2">{{item.pub_date}}</th>
-    </tr>
-  {% endfor %}
-  </table>
+      <input type="submit" value="send" class="btn btn-primary">
+    </form>
+  <div class="mt-5">
+    <table class="table">
+      <tr>
+        <th class="py-1">title</th><th class="py-1">name</th><th class="py-1">datetime</th>
+      </tr>
+    {% for item in data %}
+      <tr>
+        <th class="py-2">{{item.title}}</th><th class="py-2">{{item.friend.name}}</th><th class="py-2">{{item.pub_date}}</th>
+      </tr>
+    {% endfor %}
+    </table>
+  </div>
   <ul class="pagination justify-content-center">
     {% if data.has_previous %}
     <li class="page-item">
