@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>○✕ゲーム（AI対戦・レベルアップ）</title>
+  <style>
+    body {
+      font-family: 'Yu Gothic', 'Meiryo', sans-serif;
+      background: #e3f0ff;
+      color: #234;
+      text-align: center;
+    }
+    h1 {
+      color: #2176ff;
+      margin-top: 30px;
+      font-size: 2em;
+      letter-spacing: 0.1em;
+    }
+    #controls {
+      margin: 20px auto 10px;
+      font-size: 1.1em;
+    }
+    #levelSel {
+      font-size: 1em;
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1.5px solid #2176ff;
+      background: #f0f8ff;
+      color: #2176ff;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 80px);
+      gap: 8px;
+      justify-content: center;
+      margin: 30px auto;
+    }
+    .cell {
+      width: 80px;
+      height: 80px;
+      font-size: 2.5em;
+      background: #fff;
+      border: 2px solid #2176ff;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      user-select: none;
+    }
+    .cell:hover {
+      background: #d0e7ff;
+    }
+    .cell.win {
+      background: #ffe066;
+      color: #d35400;
+      border-color: #ffb700;
+    }
+    #message {
+      margin: 20px;
+      font-size: 1.3em;
+      min-height: 1.5em;
+      color: #2176ff;
+      font-weight: bold;
+    }
+    #reset {
+      margin-top: 10px;
+      padding: 8px 24px;
+      font-size: 1em;
+      background: #2176ff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #reset:hover {
+      background: #185bb5;
+    }
+    #expbar {
+      width: 300px;
+      height: 24px;
+      background: #eee;
+      border-radius: 12px;
+      margin: 10px auto;
+      border: 1.5px solid #2176ff;
+      overflow: hidden;
+      position: relative;
+    }
+    #expfill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffe066 60%, #2176ff 100%);
+      border-radius: 12px 0 0 12px;
+      transition: width 0.4s;
+    }
+    #levelinfo {
+      margin: 8px;
+      font-size: 1.1em;
+      color: #2176ff;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>○✕ゲーム（AI対戦・レベルアップ）</h1>
+  <div id="controls">
+    <label>AIの強さ:
+      <select id="levelSel">
+        <option value="easy">かんたん</option>
+        <option value="normal">ふつう</option>
+        <option value="hard">むずかしい</option>
+      </select>
+    </label>
+  </div>
+  <div id="levelinfo"></div>
+  <div id="expbar"><div id="expfill"></div></div>
+  <div id="board"></div>
+  <div id="message"></div>
+  <button id="reset">リセット</button>
+  <script src="q1.js"></script>
+</body>
+</html>
