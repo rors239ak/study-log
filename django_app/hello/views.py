@@ -4,7 +4,6 @@ from django.shortcuts import redirect
 from django.views.generic import ListView
 from django.views.generic import DetailView
 # from .forms import FindForm
-from django.db.models import Count,Sum,Avg, Min,Max
 from .forms import  MessageForm
 from django.core.paginator import Paginator
 # Create your views here.

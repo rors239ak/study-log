@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>花火キャンバス</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>花火キャンバス</h1>
+  <p>ドラッグでお絵描き、クリックやタッチで花火！</p>
+  <div id="tools">
+    <label>花火の種類:
+      <select id="fireworkType">
+        <option value="normal">ノーマル</option>
+        <option value="ring">リング</option>
+        <option value="star">スター</option>
+        <option value="heart">ハート</option>
+        <option value="spiral">スパイラル</option>
+        <option value="double">ダブル</option>
+        <option value="cross">クロス</option>
+        <option value="random">ランダム</option>
+      </select>
+    </label>
+    <label style="margin-left:12px;">
+      花火の色:
+      <input type="color" id="colorPicker" value="#ffe066">
+      <input type="checkbox" id="randomColor" checked>ランダム
+    </label>
+    <label style="margin-left:12px;">
+      花火の大きさ:
+      <select id="fireworkSize">
+        <option value="0.5">小</option>
+        <option value="0.75" selected>中</option>
+        <option value="1">大</option>
+      </select>
+    </label>
+    <button id="undoBtn" style="margin-left:16px;">一個前に戻る</button>
+  </div>
+  <canvas id="canvas" width="600" height="400"></canvas>
+  <div id="message"></div>
+  <script src="q1.js"></script>
+</body>
+</html>

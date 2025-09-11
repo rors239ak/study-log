@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>五目並べ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>五目並べ</h1>
+  <div id="controls">
+    <label>難易度:
+      <select id="level">
+        <option value="easy">かんたん</option>
+        <option value="normal">ふつう</option>
+        <option value="hard">むずかしい</option>
+        <option value="settai">せったい（ぜったい勝てる！）</option>
+      </select>
+    </label>
+    <button id="start">スタート</button>
+  </div>
+  <div id="board" style="display:none;"></div>
+  <div id="message"></div>
+  <button id="reset" style="display:none;">リセット</button>
+  <script src="q1.js"></script>
+</body>
+</html>
