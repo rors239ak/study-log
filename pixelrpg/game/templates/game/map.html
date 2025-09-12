@@ -187,34 +187,93 @@ function updateHud(){
 
 /*--- 敵管理（省略: 以前の spawnEnemy 等を使用） ---*/
 let enemies = []; let nextEnemyId = 1;
-function canPlace(x,y){ if(x<0||y<0||x>=MAP_W||y>=MAP_H) return false; const t=MAP[y][x]; if(t===TILE_TYPE.ROCK||t===TILE_TYPE.WATER) return false; if(x===player.x&&y===player.y) return false; for(const e of enemies) if(Math.abs(e.x-x)<=1&&Math.abs(e.y-y)<=1) return false; return true; }
+function canPlace(x,y, sizeX=1, sizeY=1){
+  if(x<0||y<0||x+sizeX-1>=MAP_W||y+sizeY-1>=MAP_H) return false;
+  for(let yy=y; yy<y+sizeY; yy++){
+    for(let xx=x; xx<x+sizeX; xx++){
+      const t = MAP[yy][xx];
+      if(t===TILE_TYPE.ROCK||t===TILE_TYPE.WATER) return false;
+      if(xx===player.x && yy===player.y) return false;
+      for(const e of enemies){
+        if(e.kind === 'boss' && Array.isArray(e.segments)){
+          for(const s of e.segments){
+            if(s.x === xx && s.y === yy) return false;
+          }
+        } else {
+          const esx = e.sizeX || (e.size || 1);
+          const esy = e.sizeY || (e.size || 1);
+          if(xx >= e.x && xx < e.x + esx && yy >= e.y && yy < e.y + esy) return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+function enemyAt(x,y){
+  return enemies.find(e => {
+    if(e.kind === 'boss' && Array.isArray(e.segments)){
+      return e.segments.some(s=>s.x===x && s.y===y);
+    }
+    const esx = e.sizeX || (e.size || 1);
+    const esy = e.sizeY || (e.size || 1);
+    return x >= e.x && x < e.x + esx && y >= e.y && y < e.y + esy;
+  });
+}
+
 function spawnEnemy(kind='goblin', near=false){
   const base = {
-    goblin:{maxHp:12,atk:3,xp:20,color:'#c55',moveFreq:3},
-    slime:{maxHp:8,atk:2,xp:12,color:'#5c5',moveFreq:3},
-    wolf:{maxHp:16,atk:4,xp:30,color:'#a63',moveFreq:3},
-    archer:{maxHp:10,atk:3,xp:25,color:'#a96',moveFreq:3},
-    // はぐれメタル：弱いがXP多く、移動頻度が速い（1＝毎 tick）
-    metal:{maxHp:2,atk:1,xp:300,color:'#dfe6ff',moveFreq:1}
+    goblin:{maxHp:12,atk:3,xp:20,color:'#c55',moveFreq:3,sizeX:1,sizeY:1},
+    slime:{maxHp:8,atk:2,xp:12,color:'#5c5',moveFreq:3,sizeX:1,sizeY:1},
+    wolf:{maxHp:16,atk:4,xp:30,color:'#a63',moveFreq:3,sizeX:1,sizeY:1},
+    archer:{maxHp:10,atk:3,xp:25,color:'#a96',moveFreq:3,sizeX:1,sizeY:1},
+    metal:{maxHp:2,atk:1,xp:300,color:'#dfe6ff',moveFreq:1,sizeX:1,sizeY:1},
+    miniboss:{maxHp:120,atk:18,xp:250,color:'#8b0000',moveFreq:3,sizeX:2,sizeY:2},
+    // 大ボス：snake (長さ6)。moveFreq遅め(4)、高HP、高ATK、特殊攻撃を持つ
+    boss:{maxHp:800,atk:28,xp:2000,color:'#442200',moveFreq:4,sizeX:6,sizeY:1}
   };
   const stats = base[kind] || base.goblin;
   let x,y,tries=0;
   do {
     if(near){ const dx = Math.floor((Math.random()*10)-5), dy = Math.floor((Math.random()*10)-5); x = Math.max(0,Math.min(MAP_W-1,player.x + dx)); y = Math.max(0,Math.min(MAP_H-1,player.y + dy)); }
     else { x = Math.floor(Math.random()*MAP_W); y = Math.floor(Math.random()*MAP_H); }
-    tries++; if(tries>200) break;
-  } while(!canPlace(x,y));
-  const e = { id: nextEnemyId++, kind, x, y, maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, xpReward: stats.xp, color: stats.color, tick:0, moveFreq: stats.moveFreq || 3 };
+    tries++; if(tries>800) break;
+    // boss は向き (h/v) を考慮して試行
+    if(kind === 'boss'){
+      // choose orientation temporarily; we'll validate later
+      const orient = Math.random() < 0.5 ? 'h' : 'v';
+      if(orient === 'h'){
+        if(!canPlace(x,y, stats.sizeX, 1)) continue;
+      } else {
+        if(!canPlace(x,y, 1, stats.sizeX)) continue;
+      }
+      // ok
+      const e = { id: nextEnemyId++, kind, x, y, maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, xpReward: stats.xp, color: stats.color, tick:0, moveFreq: stats.moveFreq, sizeX: stats.sizeX, sizeY: stats.sizeY, orient };
+      // build segments (head at index 0)
+      e.segments = [];
+      if(orient === 'h'){
+        for(let i=0;i<stats.sizeX;i++) e.segments.push({x: x + i, y: y});
+      } else {
+        for(let i=0;i<stats.sizeX;i++) e.segments.push({x: x, y: y + i});
+      }
+      enemies.push(e);
+      return e;
+    }
+  } while(!canPlace(x,y, stats.sizeX, stats.sizeY));
+  // 通常の矩形敵
+  const e = { id: nextEnemyId++, kind, x, y, maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, xpReward: stats.xp, color: stats.color, tick:0, moveFreq: stats.moveFreq || 3, sizeX: stats.sizeX || 1, sizeY: stats.sizeY || 1 };
   enemies.push(e); return e;
 }
 
 function spawnInitialEnemies(n=6){
   for(let i=0;i<n;i++){
-    // ごく低確率で はぐれメタル を混ぜる
-    if(Math.random() < 0.02){ spawnEnemy('metal'); }
+    // miniboss 出現率を約10% に変更
+    if(Math.random() < 0.20){ spawnEnemy('miniboss'); }
+    else if(Math.random() < 0.05){ spawnEnemy('metal'); } // metal は希少
     else spawnEnemy(Math.random()<0.5 ? 'goblin' : (Math.random()<0.5?'slime':'wolf'));
   }
-  // 既存の固定NPCなどあればここで追加
+  // 低確率で大ボスを混ぜたい場合はここで確率指定 (例: 0.005)
+  if(Math.random() < 0.8){ spawnEnemy('boss'); }
 }
 
 /*---  描画・補助 ---*/
@@ -237,11 +296,35 @@ function draw(){
       else if(t === TILE_TYPE.HEAL){ ctx.fillStyle = '#103'; ctx.fillRect(vx*TILE, vy*TILE, TILE, TILE); ctx.fillStyle = '#6f6'; ctx.beginPath(); ctx.arc(vx*TILE+TILE/2, vy*TILE+TILE/2, TILE/4, 0, Math.PI*2); ctx.fill(); }
     }
   }
-  // enemies
+  // enemies 描画をサイズ対応に変更
   for(const e of enemies){
     const ex = (e.x - ox)*TILE, ey = (e.y - oy)*TILE;
-    ctx.fillStyle = e.color || '#f55'; ctx.fillRect(ex+6, ey+6, 20, 20);
-    const hpPct = Math.max(0, e.hp / e.maxHp); ctx.fillStyle='#000'; ctx.fillRect(ex+4, ey+2, TILE-8, 4); ctx.fillStyle='#f55'; ctx.fillRect(ex+4, ey+2, Math.floor((TILE-8)*hpPct), 4);
+    if(e.kind === 'boss' && Array.isArray(e.segments)){
+      // 蛇状大ボス：各セグメントを順に描画（頭は明るめ）
+      for(let si=0; si<e.segments.length; si++){
+        const s = e.segments[si];
+        const sx = (s.x - ox)*TILE, sy = (s.y - oy)*TILE;
+        ctx.fillStyle = si === 0 ? '#aa6b2b' : '#664421';
+        ctx.fillRect(sx + 2, sy + 2, TILE - 4, TILE - 4);
+      }
+      // HPバー（頭上に大きめ）
+      const head = e.segments[0];
+      const hx = (head.x - ox)*TILE, hy = (head.y - oy)*TILE;
+      const hpPct = Math.max(0, e.hp / e.maxHp);
+      ctx.fillStyle='#000'; ctx.fillRect(hx+2, hy-6, TILE*3, 5);
+      ctx.fillStyle='#f55'; ctx.fillRect(hx+2, hy-6, Math.floor((TILE*3)*hpPct), 5);
+      continue;
+    }
+    // 既存の矩形敵描画（sizeX/sizeY 使用）
+    const esx = e.sizeX || 1, esy = e.sizeY || 1;
+    const w = TILE * esx, h = TILE * esy;
+    ctx.fillStyle = e.color || '#f55';
+    ctx.fillRect(ex + 4, ey + 4, w - 8, h - 8);
+    if(!e.npc){
+      const hpPct = Math.max(0, e.hp / e.maxHp);
+      ctx.fillStyle='#000'; ctx.fillRect(ex+4, ey+2, w-8, 4);
+      ctx.fillStyle='#f55'; ctx.fillRect(ex+4, ey+2, Math.floor((w-8)*hpPct), 4);
+    }
   }
   // indicators
   for(let i=attackIndicators.length-1;i>=0;i--){ const ind=attackIndicators[i]; const px=(ind.x-ox)*TILE, py=(ind.y-oy)*TILE; ctx.globalAlpha = Math.max(0.15, ind.life/20); ctx.fillStyle = ind.color; ctx.fillRect(px, py, TILE, TILE); ctx.globalAlpha = 1; ind.life--; if(ind.life<=0) attackIndicators.splice(i,1); }
@@ -258,7 +341,6 @@ function draw(){
 
 /*--- 当たり判定/ユーティリティ ---*/
 function is_block(x,y){ if(x<0||y<0||x>=MAP_W||y>=MAP_H) return true; const t=MAP[y][x]; return t === TILE_TYPE.ROCK || t === TILE_TYPE.WATER; }
-function enemyAt(x,y){ return enemies.find(e => e.x === x && e.y === y); }
 function dirVector(dir){ if(dir==='up') return {dx:0,dy:-1}; if(dir==='down') return {dx:0,dy:1}; if(dir==='left') return {dx:-1,dy:0}; return {dx:1,dy:0}; }
 
 /*--- 攻撃処理 ---*/
@@ -370,29 +452,101 @@ function assassinExecute(){
 function enemyTick(){
   for(const e of enemies){
     e.tick = (e.tick || 0) + 1;
-    // 各敵は e.moveFreq に応じて行動（はぐれメタルは 1 で高速）
     if(e.tick % (e.moveFreq || 3) !== 0) continue;
 
-    // はぐれメタルの特性：プレイヤーに近づくと逃げる（移動速い）
-    if(e.kind === 'metal'){
-      const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-      // 近ければ逃走優先（方向を反転）
-      let nx = e.x, ny = e.y;
-      if(dist <= 6){
-        if(e.x < player.x) nx = e.x - 1;
-        else if(e.x > player.x) nx = e.x + 1;
-        if(e.y < player.y) ny = e.y - 1;
-        else if(e.y > player.y) ny = e.y + 1;
-      } else {
-        // 離れているときはランダム移動（素早く）
-        const dir = Math.floor(Math.random()*4);
-        if(dir===0) nx = e.x+1;
-        if(dir===1) nx = e.x-1;
-        if(dir===2) ny = e.y+1;
-        if(dir===3) ny = e.y-1;
+    // boss の特別挙動
+    if(e.kind === 'boss'){
+      // head は segments[0]
+      const head = e.segments[0];
+      // 距離
+      const dist = Math.abs(head.x - player.x) + Math.abs(head.y - player.y);
+
+      // 近距離なら範囲攻撃（3x3 中央=head）
+      if(dist <= 3 && Math.random() < 0.5){
+        // indicator とダメージ
+        for(let ay = head.y-1; ay <= head.y+1; ay++){
+          for(let ax = head.x-1; ax <= head.x+1; ax++){
+            addIndicatorLine(ax, ay, 'rgba(200,80,40,0.95)', 26);
+            // プレイヤーが被弾
+            if(player.x === ax && player.y === ay){
+              const dmg = Math.max(1, e.atk + (Math.floor(Math.random()*4)-2));
+              player.hp = Math.max(0, player.hp - dmg);
+              showFloatingText("-"+dmg, canvas.width/2, 40, '#f55');
+              if(player.hp <= 0){ msgEl.textContent = "やられた... リスポーンします（レベル維持）"; player.hp = player.maxHp; player.x = Math.floor(MAP_W/2); player.y = Math.floor(MAP_H/2); persistClassStats(); }
+            }
+          }
+        }
+        continue; // 攻撃したらそのターンは移動しない
       }
-      if(!is_block(nx,ny) && !enemyAt(nx,ny) && !(nx===player.x && ny===player.y)){ e.x = nx; e.y = ny; }
-      continue;
+
+      // 遠距離直線攻撃（頭からプレイヤー方向への射線、射程6）>
+      if(dist <= 10 && Math.random() < 0.3){
+        const dx = Math.sign(player.x - head.x), dy = Math.sign(player.y - head.y);
+        let bx = head.x, by = head.y;
+        for(let i=1;i<=6;i++){
+          bx += dx; by += dy;
+          addIndicatorLine(bx, by, 'rgba(180,120,255,0.95)', 18);
+          // 命中判定（プレイヤー）
+          if(player.x === bx && player.y === by){
+            const dmg = Math.max(1, Math.floor(e.atk * 0.9));
+            player.hp = Math.max(0, player.hp - dmg);
+            showFloatingText("-"+dmg, canvas.width/2, 40, '#f5a');
+            if(player.hp <= 0){ msgEl.textContent = "やられた... リスポーンします（レベル維持）"; player.hp = player.maxHp; player.x = Math.floor(MAP_W/2); player.y = Math.floor(MAP_H/2); persistClassStats(); }
+            break;
+          }
+        }
+        continue;
+      }
+
+      // 移動: head に向けて近づく or ランダムに進む。蛇状は segments をシフト
+      // 優先: プレイヤー方向へ1マス (head)
+      let hx = head.x, hy = head.y;
+      if(Math.random() < 0.8){
+        if(head.x < player.x) hx++;
+        else if(head.x > player.x) hx--;
+        if(head.y < player.y) hy++;
+        else if(head.y > player.y) hy--;
+        // 少しランダム化で片方向のみ移動する場合がある
+        if(Math.random() < 0.6){ if(Math.random()<0.5) hy = head.y; else hx = head.x; }
+      } else {
+        const dir = Math.floor(Math.random()*4);
+        if(dir===0) hx = head.x+1;
+        if(dir===1) hx = head.x-1;
+        if(dir===2) hy = head.y+1;
+        if(dir===3) hy = head.y-1;
+      }
+      // 新head位置が移動可能か（全セグメント置換しても衝突しないか）を検査
+      const newSegs = [{x:hx,y:hy}];
+      for(let i=1;i<e.segments.length;i++){
+        newSegs.push({x: e.segments[i-1].x, y: e.segments[i-1].y});
+      }
+      // collision チェック
+      let ok = true;
+      for(const s of newSegs){
+        if(s.x<0||s.y<0||s.x>=MAP_W||s.y>=MAP_H){ ok = false; break; }
+        if(MAP[s.y][s.x] === TILE_TYPE.ROCK || MAP[s.y][s.x] === TILE_TYPE.WATER){ ok = false; break; }
+        // check other enemies footprint
+        for(const oe of enemies){
+          if(oe.id === e.id) continue;
+          if(oe.kind === 'boss' && Array.isArray(oe.segments)){
+            for(const os of oe.segments) if(os.x===s.x && os.y===s.y){ ok = false; break; }
+            if(!ok) break;
+          } else {
+            const oxs = oe.sizeX || (oe.size || 1);
+            const oys = oe.sizeY || (oe.size || 1);
+            if(s.x >= oe.x && s.x < oe.x + oxs && s.y >= oe.y && s.y < oe.y + oys){ ok = false; break; }
+          }
+        }
+        if(!ok) break;
+        // don't move onto player
+        if(s.x === player.x && s.y === player.y){ ok = false; break; }
+      }
+      if(ok){
+        e.segments = newSegs;
+        // 蛇状移動：全体を1マスシフト
+        const tail = e.segments.pop();
+        e.segments.unshift(tail);
+      }
     }
 
     // 既存の敵行動（従来の挙動を保持）
@@ -425,7 +579,9 @@ function enemyTick(){
       if(dir===2) ny = e.y+1;
       if(dir===3) ny = e.y-1;
     }
-    if(!is_block(nx,ny) && !enemyAt(nx,ny) && !(nx===player.x && ny===player.y)){ e.x = nx; e.y = ny; }
+    // 敵移動判定の際、新座標が多タイル用でも canPlace を用いてチェックするよう修正
+    // （例の一部）―― enemyTick 内、nx,ny を決めた後の配置判定を以下のように
+    if(!is_block(nx,ny) && !enemyAt(nx,ny) && canPlace(nx,ny, e.size || 1) && !(nx===player.x && ny===player.y)){ e.x = nx; e.y = ny; }
   }
 }
 
