@@ -328,6 +328,24 @@ function draw(){
       else if(t === TILE_TYPE.ROCK){ const img = tileImgs.rock; if(img && img.complete) ctx.drawImage(img, vx*TILE, vy*TILE, TILE, TILE); else ctx.fillStyle='#777', ctx.fillRect(vx*TILE, vy*TILE, TILE, TILE); }
       else if(t === TILE_TYPE.WATER){ const img = tileImgs.water; if(img && img.complete) ctx.drawImage(img, vx*TILE, vy*TILE, TILE, TILE); else ctx.fillStyle='#18a', ctx.fillRect(vx*TILE, vy*TILE, TILE, TILE); }
       else if(t === TILE_TYPE.HEAL){ ctx.fillStyle = '#103'; ctx.fillRect(vx*TILE, vy*TILE, TILE, TILE); ctx.fillStyle = '#6f6'; ctx.beginPath(); ctx.arc(vx*TILE+TILE/2, vy*TILE+TILE/2, TILE/4, 0, Math.PI*2); ctx.fill(); }
+
+      // PORTS 上なら桟橋を描画（タイル上に木の板と支柱を重ねる）
+      if(PORTS.some(p => p.x === mx && p.y === my)){
+        const px = vx * TILE, py = vy * TILE;
+        // ベースの木板
+        ctx.fillStyle = '#6b3b1a';
+        ctx.fillRect(px + 6, py + 10, TILE - 12, TILE - 18);
+        // 板の分割ライン（見た目のため）
+        ctx.fillStyle = '#4a2a12';
+        const plankW = Math.floor((TILE - 12) / 3);
+        for(let i=0;i<3;i++){
+          ctx.fillRect(px + 6 + i*plankW + Math.max(0,i-1)*2, py + 10, plankW - 2, TILE - 18);
+        }
+        // 支柱
+        ctx.fillStyle = '#3d2920';
+        ctx.fillRect(px + 4, py + 8, 4, TILE - 6);
+        ctx.fillRect(px + TILE - 8, py + 8, 4, TILE - 6);
+      }
     }
   }
   // enemies 描画をサイズ対応に変更
