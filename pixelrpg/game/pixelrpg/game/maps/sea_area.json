@@ -1,0 +1,62 @@
+{
+  "name": "sea_area",
+  "type": "area",
+  "background": "blue",
+  "tiles": [
+    {
+      "type": "water",
+      "properties": {
+        "walkable": false
+      }
+    },
+    {
+      "type": "sand",
+      "properties": {
+        "walkable": true
+      }
+    }
+  ],
+  "objects": [
+    {
+      "type": "whirlpool",
+      "properties": {
+        "walkable": false,
+        "description": "A swirling vortex of water."
+      }
+    },
+    {
+      "type": "fish_enemy",
+      "properties": {
+        "health": 30,
+        "attack": 5,
+        "defense": 2,
+        "position": [3, 5]
+      }
+    },
+    {
+      "type": "shell_enemy",
+      "properties": {
+        "health": 25,
+        "attack": 4,
+        "defense": 1,
+        "position": [5, 5]
+      }
+    },
+    {
+      "type": "swimmer_enemy",
+      "properties": {
+        "health": 20,
+        "attack": 6,
+        "defense": 3,
+        "position": [4, 4]
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "to": "beach_area",
+      "position": [0, 0],
+      "description": "A path leading to the sandy beach."
+    }
+  ]
+}

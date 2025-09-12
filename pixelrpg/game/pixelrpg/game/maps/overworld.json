@@ -1,0 +1,65 @@
+{
+  "name": "overworld",
+  "width": 20,
+  "height": 15,
+  "layers": [
+    {
+      "name": "background",
+      "data": [
+        // Background layer data (0 for empty tiles, other numbers for specific tiles)
+      ]
+    },
+    {
+      "name": "objects",
+      "data": [
+        // Object layer data (0 for empty tiles, other numbers for specific objects)
+      ]
+    },
+    {
+      "name": "enemies",
+      "data": [
+        // Enemy layer data (0 for empty tiles, other numbers for specific enemies)
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "type": "table",
+      "position": { "x": 5, "y": 3 }
+    },
+    {
+      "type": "kitchen",
+      "position": { "x": 6, "y": 3 }
+    },
+    {
+      "type": "toilet",
+      "position": { "x": 7, "y": 3 }
+    },
+    {
+      "type": "bed",
+      "position": { "x": 5, "y": 4 }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "wizard",
+      "attack_range": "random",
+      "position": { "x": 10, "y": 5 }
+    },
+    {
+      "type": "assassin",
+      "attack_range": 6,
+      "position": { "x": 12, "y": 5 }
+    }
+  ],
+  "areas": {
+    "grassland": {
+      "map": "grassland_area.json",
+      "position": { "x": 0, "y": 0 }
+    },
+    "sea": {
+      "map": "sea_area.json",
+      "position": { "x": 15, "y": 0 }
+    }
+  }
+}

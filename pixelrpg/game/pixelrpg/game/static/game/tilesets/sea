@@ -1,0 +1,49 @@
+{
+  "background": "blue",
+  "beach": {
+    "color": "skin",
+    "objects": [
+      {
+        "type": "sand",
+        "properties": {
+          "texture": "smooth"
+        }
+      }
+    ]
+  },
+  "sea": {
+    "color": "blue",
+    "objects": [
+      {
+        "type": "whirlpool",
+        "properties": {
+          "passable": false
+        }
+      },
+      {
+        "type": "enemy",
+        "name": "fish",
+        "properties": {
+          "attack": "swim",
+          "defense": "scales"
+        }
+      },
+      {
+        "type": "enemy",
+        "name": "shell",
+        "properties": {
+          "attack": "spike",
+          "defense": "hard shell"
+        }
+      },
+      {
+        "type": "enemy",
+        "name": "swimmer",
+        "properties": {
+          "attack": "splash",
+          "defense": "swim fast"
+        }
+      }
+    ]
+  }
+}

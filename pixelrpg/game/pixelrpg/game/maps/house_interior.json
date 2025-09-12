@@ -1,0 +1,36 @@
+{
+  "name": "house_interior",
+  "description": "Interior of a house with various objects.",
+  "width": 10,
+  "height": 10,
+  "tiles": [
+    ["wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall"],
+    ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+    ["wall", "floor", "table", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+    ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+    ["wall", "floor", "floor", "floor", "kitchen", "floor", "floor", "floor", "floor", "wall"],
+    ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "toilet", "floor", "wall"],
+    ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "bed", "wall"],
+    ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+    ["wall", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "floor", "wall"],
+    ["wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall", "wall"]
+  ],
+  "objects": [
+    {
+      "type": "table",
+      "position": [2, 2]
+    },
+    {
+      "type": "kitchen",
+      "position": [4, 4]
+    },
+    {
+      "type": "toilet",
+      "position": [6, 7]
+    },
+    {
+      "type": "bed",
+      "position": [6, 8]
+    }
+  ]
+}

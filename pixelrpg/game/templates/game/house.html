@@ -40,16 +40,38 @@ function loadStats(cls){ const key='rpg_stats_'+cls; const raw=localStorage.getI
 function saveStatsFor(cls, s){ localStorage.setItem('rpg_stats_'+cls, JSON.stringify(s)); }
 
 let stats = loadStats(cls);
-let items = []; // {x,y,type} type: 'xp' or 'heal'
+let items = []; // {x,y,type}
+let objects = []; // 家具オブジェクト {x,y,w,h,type,label}
+
+// 家具を固定配置（座標はタイル単位）
+function placeDefaultObjects(){
+  objects = [
+    {x:2,y:1,w:3,h:2,type:'table', label:'机'},
+    {x:7,y:1,w:3,h:2,type:'kitchen', label:'キッチン'},
+    {x:1,y:5,w:3,h:2,type:'bed', label:'ベッド'},
+    {x:10,y:5,w:1,h:1,type:'toilet', label:'トイレ'}
+  ];
+}
+// オブジェクト上は通行不可
+function objectAt(x,y){
+  return objects.find(o => x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h);
+}
+
 function randomPlaceItems(){
   items = [];
   const n = 6 + Math.floor(Math.random()*5);
   for(let i=0;i<n;i++){
     let rx,ry,tries=0;
-    do{ rx = Math.floor(Math.random()*W); ry = Math.floor(Math.random()*H); tries++; } while((rx===player.x && ry===player.y) && tries<100);
-    items.push({x:rx,y:ry, type: Math.random()<0.6 ? 'xp' : 'heal', value: Math.random()<0.6 ? (10+Math.floor(Math.random()*25)) : (10+Math.floor(Math.random()*20))});
+    do{
+      rx = Math.floor(Math.random()*W);
+      ry = Math.floor(Math.random()*H);
+      tries++;
+    } while((rx===player.x && ry===player.y) || objectAt(rx,ry) && tries<200);
+    items.push({x:rx,y:ry, type: Math.random()<0.6 ? 'xp' : 'heal', value: Math.random()<0.6 ? (10+Math.floor(Math.random()*25)) : (8+Math.floor(Math.random()*18))});
   }
 }
+
+placeDefaultObjects();
 randomPlaceItems();
 
 function draw(){
@@ -59,6 +81,15 @@ function draw(){
     for(let x=0;x<W;x++){
       ctx.strokeStyle = '#0b2b21'; ctx.strokeRect(x*TILE,y*TILE,TILE,TILE);
     }
+  }
+  // objects (家具)
+  for(const o of objects){
+    const px = o.x*TILE, py = o.y*TILE;
+    if(o.type==='table'){ ctx.fillStyle='#6b442b'; ctx.fillRect(px,py,o.w*TILE,o.h*TILE); }
+    else if(o.type==='kitchen'){ ctx.fillStyle='#8a8a5c'; ctx.fillRect(px,py,o.w*TILE,o.h*TILE); }
+    else if(o.type==='bed'){ ctx.fillStyle='#554466'; ctx.fillRect(px,py,o.w*TILE,o.h*TILE); }
+    else if(o.type==='toilet'){ ctx.fillStyle='#dfe9f2'; ctx.fillRect(px,py,o.w*TILE,o.h*TILE); }
+    ctx.fillStyle='#000'; ctx.font='12px Meiryo'; ctx.fillText(o.label, px+4, py+14);
   }
   // items
   for(const it of items){
@@ -72,12 +103,13 @@ function draw(){
 }
 
 function pickup(){
+  // 家具上は拾えないよう既にitemsは置かれていないが、安全のため再確認
   for(let i=items.length-1;i>=0;i--){
     const it = items[i];
     if(it.x === player.x && it.y === player.y){
+      if(objectAt(it.x, it.y)) continue;
       if(it.type === 'xp'){
         stats.xp += it.value;
-        // level up loop
         while(stats.xp >= stats.xpToNext){ stats.xp -= stats.xpToNext; stats.level += 1; stats.maxHp += 8; stats.atk += 2; stats.hp = stats.maxHp; stats.xpToNext = Math.floor(stats.xpToNext * 1.4); }
         document.getElementById('msg').textContent = `XP +${it.value} を獲得！`;
       } else {
@@ -91,14 +123,14 @@ function pickup(){
   draw();
 }
 
+// 移動時、家具にぶつかったら移動不可にする
 document.addEventListener('keydown', (e)=>{
-  if(e.key==='ArrowUp'){ if(player.y>0) player.y--; }
-  if(e.key==='ArrowDown'){ if(player.y<H-1) player.y++; }
-  if(e.key==='ArrowLeft'){ if(player.x>0) player.x--; }
-  if(e.key==='ArrowRight'){ if(player.x<W-1) player.x++; }
+  if(e.key==='ArrowUp'){ if(player.y>0 && !objectAt(player.x, player.y-1)) player.y--; }
+  if(e.key==='ArrowDown'){ if(player.y<H-1 && !objectAt(player.x, player.y+1)) player.y++; }
+  if(e.key==='ArrowLeft'){ if(player.x>0 && !objectAt(player.x-1, player.y)) player.x--; }
+  if(e.key==='ArrowRight'){ if(player.x<W-1 && !objectAt(player.x+1, player.y)) player.x++; }
   pickup();
 });
-
 document.getElementById('btn-exit').addEventListener('click', ()=>{ location.href = '/'; });
 
 draw();
