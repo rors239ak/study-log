@@ -24,6 +24,9 @@
       <button class="class-btn" data-class="hero" id="btn-hero">勇者</button>
       <button class="class-btn" data-class="wizard" id="btn-wizard">魔法使い</button>
       <button class="class-btn" data-class="assassin" id="btn-assassin">暗殺者</button>
+      <!-- エリア移動ボタン -->
+      <button id="btn-sea" style="margin-left:12px;padding:6px 10px;border-radius:6px;background:#0b4b6f;color:#fff;border:1px solid #234">海へ</button>
+      <button id="btn-overworld" style="margin-left:6px;display:none;padding:6px 10px;border-radius:6px;background:#2b5f2b;color:#fff;border:1px solid #234">陸へ戻る</button>
     </div>
     <div id="status">
       <div class="bar" id="player-stats">
@@ -106,19 +109,50 @@ function checkAllLoaded(){
   initAfterLoad();
 }
 
-/*--- マップ生成 ---*/
+/*--- マップ関連 ---*/
 const TILE_TYPE = {VILLAGE:6, ROCK:7, WATER:8, HEAL:9};
-const MAP = new Array(MAP_H);
-for(let y=0;y<MAP_H;y++){
-  MAP[y]=new Array(MAP_W);
-  for(let x=0;x<MAP_W;x++){
-    if(Math.random() < 0.005) MAP[y][x] = TILE_TYPE.VILLAGE;
-    else if(Math.random() < 0.03) MAP[y][x] = TILE_TYPE.ROCK;
-    else if(Math.random() < 0.02) MAP[y][x] = TILE_TYPE.WATER;
-    else if(Math.random() < 0.006) MAP[y][x] = TILE_TYPE.HEAL;
-    else MAP[y][x] = Math.floor(Math.abs(Math.sin(x*0.3+y*0.2)) * grassUrls.length);
+let MAP = new Array(MAP_H);
+let currentArea = 'overworld'; // 'overworld' | 'sea'
+
+// 港一覧（ここに座標を追加してください）
+const PORTS = [{x:10, y:8}];
+
+// generateMap を呼んだあとに港タイルを配置するヘルパー
+function placePortsOnMap(){
+  for(const p of PORTS){
+    if(p.x >= 0 && p.x < MAP_W && p.y >= 0 && p.y < MAP_H){
+      MAP[p.y][p.x] = TILE_TYPE.VILLAGE; // 見た目は村タイルにする（任意で変更可）
+    }
   }
 }
+
+function generateMap(area='overworld'){
+  currentArea = area;
+  MAP = new Array(MAP_H);
+  for(let y=0;y<MAP_H;y++){
+    MAP[y] = new Array(MAP_W);
+    for(let x=0;x<MAP_W;x++){
+      if(area === 'sea'){
+        if(Math.random() < 0.02) MAP[y][x] = TILE_TYPE.VILLAGE;
+        else if(Math.random() < 0.12) MAP[y][x] = TILE_TYPE.WATER;
+        else if(Math.random() < 0.03) MAP[y][x] = TILE_TYPE.ROCK;
+        else if(Math.random() < 0.006) MAP[y][x] = TILE_TYPE.HEAL;
+        else MAP[y][x] = Math.random() < 0.15 ? Math.floor(Math.abs(Math.sin(x*0.3+y*0.2)) * grassUrls.length) : TILE_TYPE.WATER;
+      } else {
+        if(Math.random() < 0.005) MAP[y][x] = TILE_TYPE.VILLAGE;
+        else if(Math.random() < 0.03) MAP[y][x] = TILE_TYPE.ROCK;
+        else if(Math.random() < 0.02) MAP[y][x] = TILE_TYPE.WATER;
+        else if(Math.random() < 0.006) MAP[y][x] = TILE_TYPE.HEAL;
+        else MAP[y][x] = Math.floor(Math.abs(Math.sin(x*0.3+y*0.2)) * grassUrls.length);
+      }
+    }
+  }
+  placePortsOnMap();
+}
+
+// 初期は陸地を生成
+generateMap('overworld');
+// spawnInitialEnemies は initAfterLoad から呼ばれるのでここでは敵は作られない
 
 /*--- クラス別ステータスの永続化（localStorage） ---*/
 function defaultStatsFor(cls){
@@ -345,8 +379,8 @@ function draw(){
 }
 
 /*--- 当たり判定/ユーティリティ ---*/
-function is_block(x,y){ if(x<0||y<0||x>=MAP_W||y>=MAP_H) return true; const t=MAP[y][x]; return t === TILE_TYPE.ROCK || t === TILE_TYPE.WATER; }
-function dirVector(dir){ if(dir==='up') return {dx:0,dy:-1}; if(dir==='down') return {dx:0,dy:1}; if(dir==='left') return {dx:-1,dy:0}; return {dx:1,dy:0}; }
+function is_block(x,y){ if(x<0||y<0||x>=MAP_W||y>=MAP_H) return true; const t = MAP[y][x]; if(t === TILE_TYPE.ROCK) return true; if(t === TILE_TYPE.WATER) return (currentArea !== 'sea'); // seaでは川/海を歩ける return false; }
+function dirVector(dir){ if(dir==='up') return {dx:0,dy:-1}; if(dir==='down') return {dx:0,dy:1}; if(dir==='left') return {dx:-1,dy:0}; return {dx:1,dy:0}; }}
 
 /*--- 攻撃処理 ---*/
 // 通常攻撃: 前方1マス
@@ -607,8 +641,38 @@ function attemptMove(nx, ny){
   return true;
 }
 
+// エリア切替処理
+function switchArea(area){
+  // プレイヤー位置を安全な場所に移動（中央付近）
+  player.x = Math.floor(MAP_W/2);
+  player.y = Math.floor(MAP_H/2);
+  // MAP 再生成、敵クリア、再スポーン
+  generateMap(area);
+  enemies = [];
+  spawnInitialEnemies(8);
+  // UI ボタン表示切替
+  document.getElementById('btn-sea').style.display = (area === 'sea') ? 'none' : 'inline-block';
+  document.getElementById('btn-overworld').style.display = (area === 'sea') ? 'inline-block' : 'none';
+  msgEl.textContent = (area === 'sea') ? '海マップに移動しました。' : '陸地に戻りました。';
+  draw();
+}
+document.getElementById('btn-sea').addEventListener('click', ()=> switchArea('sea'));
+document.getElementById('btn-overworld').addEventListener('click', ()=> switchArea('overworld'));
+
 /*--- 入力 ---*/
 document.addEventListener('keydown', (e)=>{
+  // 港でエリア切替
+  if(e.key === 'o' || e.key === 'O' || e.key === 'Enter'){
+    for(const p of PORTS){
+      if(player.x === p.x && player.y === p.y){
+        if(currentArea === 'overworld') switchArea('sea');
+        else switchArea('overworld');
+        e.preventDefault();
+        return;
+      }
+    }
+  }
+
   if(e.key === ' '){ e.preventDefault(); playerAttack(); return; }
   if(e.key === 'x' || e.key === 'X'){ heroSlash3(); return; }
   if(e.key === 'c' || e.key === 'C'){ wizardRanged4(); return; }
@@ -662,12 +726,13 @@ applyClassStats('hero');
 
 /*--- 初期化 ---*/
 function initAfterLoad(){
+  // generateMap('overworld'); // 既にロード時に生成済み
   spawnInitialEnemies(10);
   updateHud();
   draw();
-  msgEl.textContent = "矢印キーで移動。Space=攻撃 X=勇者3連斬 C=魔法(3ランダム) V=暗殺(8マス暗殺) Z=村へ入る";
+  msgEl.textContent = "矢印キーで移動。Space=攻撃 X=勇者3連斬 C=魔法(ランダム) V=暗殺 Z=村へ入る";
 }
-setInterval(()=>{ if(enemies.length < 12 && Math.random()<0.5) spawnEnemy(); }, 5000);
+
 </script>
 </body>
 </html>
