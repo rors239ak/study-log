@@ -1,0 +1,54 @@
+{
+  "name": "Beach Area",
+  "description": "A sunny beach area with sand and sea.",
+  "background": "blue",
+  "tiles": {
+    "sand": "assets/tiles/sand.png",
+    "water": "assets/tiles/water.png",
+    "beach": "assets/tiles/beach.png"
+  },
+  "objects": [
+    {
+      "type": "table",
+      "position": {"x": 5, "y": 3}
+    },
+    {
+      "type": "kitchen",
+      "position": {"x": 6, "y": 3}
+    },
+    {
+      "type": "toilet",
+      "position": {"x": 7, "y": 3}
+    },
+    {
+      "type": "bed",
+      "position": {"x": 8, "y": 3}
+    }
+  ],
+  "enemies": [
+    {
+      "type": "fish",
+      "position": {"x": 10, "y": 5}
+    },
+    {
+      "type": "shell",
+      "position": {"x": 12, "y": 5}
+    },
+    {
+      "type": "swimmer",
+      "position": {"x": 14, "y": 5}
+    }
+  ],
+  "obstacles": [
+    {
+      "type": "whirlpool",
+      "position": {"x": 11, "y": 6}
+    }
+  ],
+  "area_transition": {
+    "grassland": {
+      "position": {"x": 0, "y": 0},
+      "destination": "grassland_area.json"
+    }
+  }
+}

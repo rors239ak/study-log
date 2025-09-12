@@ -1,0 +1,88 @@
+body {
+    background-color: #87CEEB; /* Sky blue background for the sea area */
+    color: #FFFFFF; /* Text color */
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+h1 {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+}
+
+.button {
+    background-color: #FF6347; /* Tomato color for buttons */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.button:hover {
+    background-color: #FF4500; /* Darker tomato on hover */
+}
+
+.map {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr); /* Adjust grid size as needed */
+    gap: 5px;
+}
+
+.tile {
+    width: 50px; /* Adjust tile size */
+    height: 50px;
+    background-color: #A9DFBF; /* Light green for grass tiles */
+}
+
+.sea {
+    background-color: #1E90FF; /* Dodger blue for sea tiles */
+}
+
+.sand {
+    background-color: #F5DEB3; /* Wheat color for sand tiles */
+}
+
+.object {
+    position: relative;
+}
+
+.object.table {
+    background-image: url('../sprites/table.png'); /* Example object */
+    background-size: cover;
+    width: 50px;
+    height: 50px;
+}
+
+.object.kitchen {
+    background-image: url('../sprites/kitchen.png'); /* Example object */
+    background-size: cover;
+    width: 50px;
+    height: 50px;
+}
+
+.object.toilet {
+    background-image: url('../sprites/toilet.png'); /* Example object */
+    background-size: cover;
+    width: 50px;
+    height: 50px;
+}
+
+.object.bed {
+    background-image: url('../sprites/bed.png'); /* Example object */
+    background-size: cover;
+    width: 50px;
+    height: 50px;
+}

@@ -37,14 +37,14 @@
   </div>
 
   <div id="canvas-wrap">
-    <canvas id="game" width="640" height="384"></canvas>
+    <canvas id="game" width="640" height="416"></canvas> <!-- 13行 * 32px = 416 -->
     <div id="loading" style="color:#9cf;margin:6px">画像読み込み中...</div>
   </div>
 
 <script>
 /*--- 基本設定 ---*/
 const TILE = 32;
-const VIEW_W = 20, VIEW_H = 12;
+const VIEW_W = 20, VIEW_H = 13; // 下側に1行増やす
 const MAP_W = 80, MAP_H = 50;
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -287,44 +287,68 @@ function heroSlash3(){
 function wizardRanged4(){
   if(player.atkCooldown>0) return;
   if(player.cls !== 'wizard'){ showFloatingText("魔法使いだけ使用可", canvas.width/2-30, 40, '#ccc'); return; }
-  player.atkCooldown = 16;
-  // pick 3 random distinct tiles on map excluding player's tile
-  const picks = new Set();
-  while(picks.size < 3){
-    const rx = Math.floor(Math.random()*MAP_W), ry = Math.floor(Math.random()*MAP_H);
-    if(rx === player.x && ry === player.y) continue;
-    picks.add(rx + ',' + ry);
+  // 5秒クールダウン（140ms tick -> 36）
+  player.atkCooldown = 36;
+  // ビューポート内のタイル列挙（プレイヤー自身は除外）
+  const {ox, oy} = camOrigin();
+  const visible = [];
+  for(let yy = oy; yy < oy + VIEW_H; yy++){
+    for(let xx = ox; xx < ox + VIEW_W; xx++){
+      if(xx === player.x && yy === player.y) continue;
+      visible.push({x: xx, y: yy});
+    }
   }
-  for(const s of picks){
-    const [tx,ty] = s.split(',').map(Number);
-    // indicator along path (visual)
-    addIndicatorLine(tx, ty, 'rgba(80,200,255,0.95)', 22);
-    // area damage: manhattan dist <=1
-    const aoe = enemies.filter(e => Math.abs(e.x - tx) + Math.abs(e.y - ty) <= 1);
-    for(const target of aoe){
+  if(visible.length === 0) return;
+  // 最大15タイルをランダム選択
+  const picks = [];
+  const maxPick = Math.min(15, visible.length);
+  while(picks.length < maxPick){
+    const i = Math.floor(Math.random() * visible.length);
+    picks.push(visible.splice(i,1)[0]);
+  }
+  // 各選択タイルにエフェクト＋周辺ダメージ（マンハッタン<=1）
+  for(const p of picks){
+    addIndicatorLine(p.x, p.y, 'rgba(80,200,255,0.95)', 22);
+    const aoeTargets = enemies.filter(e => Math.abs(e.x - p.x) + Math.abs(e.y - p.y) <= 1);
+    for(const target of aoeTargets){
       const dmg = Math.max(1, player.atk + 3 + (Math.floor(Math.random()*4)-2));
       target.hp -= dmg;
       showFloatingText("-"+dmg, (target.x - camOrigin().ox)*TILE + 12, (target.y - camOrigin().oy)*TILE + 16, '#9cf');
-      if(target.hp <= 0){ enemies = enemies.filter(e => e.id !== target.id); xpGain(target.xpReward); showFloatingText("倒した！ +" + target.xpReward + "XP", (target.x - camOrigin().ox)*TILE + 8, (target.y - camOrigin().oy)*TILE + 8, '#9f9'); if(Math.random()<0.4) spawnEnemy(); }
+      if(target.hp <= 0){
+        enemies = enemies.filter(e => e.id !== target.id);
+        xpGain(target.xpReward);
+        showFloatingText("倒した！ +" + target.xpReward + "XP", (target.x - camOrigin().ox)*TILE + 8, (target.y - camOrigin().oy)*TILE + 8, '#9f9');
+        if(Math.random()<0.4) spawnEnemy();
+      }
     }
   }
 }
 
-// 暗殺者: 前方8マス目にいる敵を一撃必殺（Vキー）
 function assassinExecute(){
   if(player.atkCooldown>0) return;
   if(player.cls !== 'assassin'){ showFloatingText("暗殺者だけ使用可", canvas.width/2-30, 40, '#ccc'); return; }
   player.atkCooldown = 18;
   const v = dirVector(player.dir);
-  const tx = player.x + v.dx * 8, ty = player.y + v.dy * 8;
-  addIndicatorLine(tx, ty, 'rgba(40,40,40,0.95)', 22);
-  const target = enemyAt(tx, ty);
-  if(!target){ showFloatingText("対象がいない", canvas.width/2-10, 40, '#ccc'); return; }
-  // instant kill
-  enemies = enemies.filter(e => e.id !== target.id);
-  showFloatingText("暗殺！ +" + target.xpReward + "XP", (tx - camOrigin().ox)*TILE + 8, (ty - camOrigin().oy)*TILE + 8, '#f9d');
-  xpGain(target.xpReward);
-  if(Math.random()<0.4) spawnEnemy();
+  // 前方5マス目
+  const tx = player.x + v.dx * 5, ty = player.y + v.dy * 5;
+  // 2x2の四角（tx,ty）、(tx+1,ty)、(tx,ty+1)、(tx+1,ty+1）
+  const area = [
+    {x:tx, y:ty},
+    {x:tx+1, y:ty},
+    {x:tx, y:ty+1},
+    {x:tx+1, y:ty+1}
+  ];
+  for(const cell of area){
+    addIndicatorLine(cell.x, cell.y, 'rgba(40,40,40,0.95)', 22);
+  }
+  const targets = enemies.filter(e => area.some(a => a.x === e.x && a.y === e.y));
+  if(targets.length === 0){ showFloatingText("対象がいない", canvas.width/2-10, 40, '#ccc'); return; }
+  for(const t of targets){
+    enemies = enemies.filter(e => e.id !== t.id);
+    showFloatingText("暗殺！ +" + t.xpReward + "XP", (t.x - camOrigin().ox)*TILE + 8, (t.y - camOrigin().oy)*TILE + 8, '#f9d');
+    xpGain(t.xpReward);
+    if(Math.random()<0.4) spawnEnemy();
+  }
 }
 
 /*--- 敵行動 ---*/
