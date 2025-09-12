@@ -1,0 +1,448 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Pixel RPG — Adventure</title>
+<style>
+  body{background:#0b1020;color:#fff;font-family:Meiryo, sans-serif;text-align:center}
+  #ui{margin:8px auto; width:740px; display:flex;justify-content:space-between;align-items:center}
+  #status{display:flex;gap:12px;align-items:center}
+  #msg{background:#0008;padding:8px;border-radius:6px;min-width:220px}
+  #canvas-wrap{margin:10px auto; width:640px; background:#000;}
+  canvas{display:block; background:#000;}
+  .class-btn{padding:6px 10px;background:#1b1f34;border-radius:6px;border:1px solid #333;color:#fff;cursor:pointer}
+  .class-btn.active{outline:2px solid #9cf}
+  .xp-bar{width:220px;height:12px;background:#222;border:1px solid #444;border-radius:6px;overflow:hidden}
+  .xp-fill{height:100%;background:linear-gradient(90deg,#7ad,#3ad);width:0%}
+</style>
+</head>
+<body>
+  <h1>Pixel RPG — Adventure</h1>
+  <div id="ui">
+    <div>
+      <button class="class-btn" data-class="hero" id="btn-hero">勇者</button>
+      <button class="class-btn" data-class="wizard" id="btn-wizard">魔法使い</button>
+      <button class="class-btn" data-class="assassin" id="btn-assassin">暗殺者</button>
+    </div>
+    <div id="status">
+      <div class="bar" id="player-stats">
+        <div>Lv <span id="pl-lv">1</span> <strong id="pl-name">勇者</strong></div>
+        <div>HP <span id="pl-hp">10</span>/<span id="pl-maxhp">10</span></div>
+      </div>
+      <div class="xp-bar"><div id="xp-fill" class="xp-fill"></div></div>
+      <div id="enemy-info" class="bar">敵: なし</div>
+    </div>
+    <div id="msg">ロード中…</div>
+  </div>
+
+  <div id="canvas-wrap">
+    <canvas id="game" width="640" height="384"></canvas>
+    <div id="loading" style="color:#9cf;margin:6px">画像読み込み中...</div>
+  </div>
+
+<script>
+/*--- 基本設定 ---*/
+const TILE = 32;
+const VIEW_W = 20, VIEW_H = 12;
+const MAP_W = 80, MAP_H = 50;
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const msgEl = document.getElementById('msg');
+const loadingEl = document.getElementById('loading');
+const xpFillEl = document.getElementById('xp-fill');
+
+const grassUrls = [
+  "{% static 'grass_0.png' %}",
+  "{% static 'grass_1.png' %}",
+  "{% static 'grass_2.png' %}",
+  "{% static 'grass_3.png' %}",
+  "{% static 'grass_4.png' %}",
+  "{% static 'grass_5.png' %}"
+];
+const decorUrls = {
+  village: "{% static 'village.png' %}",
+  rock: "{% static 'rock.png' %}",
+  water: "{% static 'water.png' %}"
+};
+function frameUrl(cls, dir, idx){
+  return "{% static 'PLACEHOLDER' %}".replace('PLACEHOLDER', cls + "_" + dir + "_" + idx + ".png");
+}
+const classes = ['hero','wizard','assassin'];
+const dirs = ['down','left','right','up'];
+
+/*--- 画像プリロード（省略表示は以前と同様） ---*/
+let grassImgs = [];
+let tileImgs = {};
+let playerFrames = {};
+let toLoad = 0, loaded = 0;
+function addImage(url, targetArr){
+  toLoad++;
+  const im = new Image(); im.src = url;
+  im.onload = ()=>{ loaded++; checkAllLoaded(); };
+  im.onerror = ()=>{ console.warn("failed load", url); loaded++; checkAllLoaded(); };
+  if(Array.isArray(targetArr)) targetArr.push(im);
+  return im;
+}
+grassUrls.forEach(u => addImage(u, grassImgs));
+tileImgs.village = addImage(decorUrls.village, []);
+tileImgs.rock = addImage(decorUrls.rock, []);
+tileImgs.water = addImage(decorUrls.water, []);
+classes.forEach(c=>{
+  playerFrames[c] = {};
+  dirs.forEach(d=>{
+    playerFrames[c][d] = [];
+    for(let f=0; f<3; f++){
+      addImage(frameUrl(c,d,f), playerFrames[c][d]);
+    }
+  });
+});
+checkAllLoaded();
+function checkAllLoaded(){
+  loadingEl.textContent = `画像読み込み中... (${loaded}/${toLoad})`;
+  if(loaded < toLoad) return;
+  loadingEl.style.display = 'none';
+  msgEl.textContent = "ロード完了。矢印キーで移動。Spaceで攻撃。";
+  initAfterLoad();
+}
+
+/*--- マップ生成 ---*/
+const TILE_TYPE = {VILLAGE:6, ROCK:7, WATER:8, HEAL:9};
+const MAP = new Array(MAP_H);
+for(let y=0;y<MAP_H;y++){
+  MAP[y]=new Array(MAP_W);
+  for(let x=0;x<MAP_W;x++){
+    if(Math.random() < 0.005) MAP[y][x] = TILE_TYPE.VILLAGE;
+    else if(Math.random() < 0.03) MAP[y][x] = TILE_TYPE.ROCK;
+    else if(Math.random() < 0.02) MAP[y][x] = TILE_TYPE.WATER;
+    else if(Math.random() < 0.006) MAP[y][x] = TILE_TYPE.HEAL;
+    else MAP[y][x] = Math.floor(Math.abs(Math.sin(x*0.3+y*0.2)) * grassUrls.length);
+  }
+}
+
+/*--- クラス別ステータスの永続化（localStorage） ---*/
+function defaultStatsFor(cls){
+  if(cls==='hero') return {level:1,xp:0,xpToNext:100,maxHp:36,hp:36,atk:7};
+  if(cls==='wizard') return {level:1,xp:0,xpToNext:100,maxHp:28,hp:28,atk:9};
+  return {level:1,xp:0,xpToNext:100,maxHp:30,hp:30,atk:8}; // assassin
+}
+function loadStats(cls){
+  const key = 'rpg_stats_'+cls;
+  const raw = localStorage.getItem(key);
+  if(raw) return JSON.parse(raw);
+  const def = defaultStatsFor(cls);
+  localStorage.setItem(key, JSON.stringify(def));
+  return def;
+}
+function saveStats(cls, stats){
+  const key = 'rpg_stats_'+cls;
+  localStorage.setItem(key, JSON.stringify(stats));
+}
+
+/*--- プレイヤー状態（現在画面用） ---*/
+let player = {
+  x: Math.floor(MAP_W/2),
+  y: Math.floor(MAP_H/2),
+  cls: 'hero',
+  dir: 'down',
+  frame:0, tick:0,
+  atkCooldown:0,
+  healTickCounter:0,
+  // stats are loaded per-class below
+  level:1,xp:0,xpToNext:100,maxHp:30,hp:30,atk:6
+};
+
+function applyClassStats(cls){
+  const s = loadStats(cls);
+  player.level = s.level; player.xp = s.xp; player.xpToNext = s.xpToNext;
+  player.maxHp = s.maxHp; player.hp = s.hp; player.atk = s.atk;
+  updateHud();
+}
+function persistClassStats(){
+  const s = {level:player.level,xp:player.xp,xpToNext:player.xpToNext,maxHp:player.maxHp,hp:player.hp,atk:player.atk};
+  saveStats(player.cls, s);
+}
+
+/*--- XP / レベル処理（クラス別） ---*/
+function xpGain(amount){
+  player.xp += amount;
+  while(player.xp >= player.xpToNext){
+    player.xp -= player.xpToNext;
+    player.level += 1;
+    player.maxHp += 8; player.atk += 2; player.hp = player.maxHp;
+    player.xpToNext = Math.floor(player.xpToNext * 1.4);
+    showFloatingText("Level Up!", (canvas.width/2)-20, 20, '#9cf');
+  }
+  persistClassStats();
+  updateHud();
+}
+function updateHud(){
+  document.getElementById('pl-lv').textContent = player.level;
+  document.getElementById('pl-name').textContent = player.cls === 'hero' ? '勇者' : (player.cls === 'wizard' ? '魔法使い' : '暗殺者');
+  document.getElementById('pl-hp').textContent = player.hp;
+  document.getElementById('pl-maxhp').textContent = player.maxHp;
+  const pct = Math.min(100, Math.floor(player.xp / player.xpToNext * 100));
+  xpFillEl.style.width = pct + "%";
+}
+
+/*--- 敵管理（省略: 以前の spawnEnemy 等を使用） ---*/
+let enemies = []; let nextEnemyId = 1;
+function canPlace(x,y){ if(x<0||y<0||x>=MAP_W||y>=MAP_H) return false; const t=MAP[y][x]; if(t===TILE_TYPE.ROCK||t===TILE_TYPE.WATER) return false; if(x===player.x&&y===player.y) return false; for(const e of enemies) if(Math.abs(e.x-x)<=1&&Math.abs(e.y-y)<=1) return false; return true; }
+function spawnEnemy(kind='goblin', near=false){
+  const base = {goblin:{maxHp:12,atk:3,xp:20,color:'#c55'}, slime:{maxHp:8,atk:2,xp:12,color:'#5c5'}, wolf:{maxHp:16,atk:4,xp:30,color:'#a63'}};
+  const stats = base[kind] || base.goblin;
+  let x,y,tries=0;
+  do {
+    if(near){ const dx = Math.floor((Math.random()*10)-5), dy = Math.floor((Math.random()*10)-5); x = Math.max(0,Math.min(MAP_W-1,player.x + dx)); y = Math.max(0,Math.min(MAP_H-1,player.y + dy)); }
+    else { x = Math.floor(Math.random()*MAP_W); y = Math.floor(Math.random()*MAP_H); }
+    tries++; if(tries>200) break;
+  } while(!canPlace(x,y));
+  const e = { id: nextEnemyId++, kind, x, y, maxHp: stats.maxHp, hp: stats.maxHp, atk: stats.atk, xpReward: stats.xp, color: stats.color, tick:0 };
+  enemies.push(e); return e;
+}
+function spawnInitialEnemies(n=6){ for(let i=0;i<n;i++) spawnEnemy(Math.random()<0.5 ? 'goblin' : (Math.random()<0.5?'slime':'wolf')); }
+
+/*--- 描画・補助 ---*/
+let floatingTexts = [], attackIndicators = [];
+function showFloatingText(text, x, y, color='#fff'){ floatingTexts.push({text,x,y,color,life:40}); }
+function addIndicatorLine(tx,ty,color,life=18){ attackIndicators.push({x:tx,y:ty,color,life}); }
+function camOrigin(){ let ox = player.x - Math.floor(VIEW_W/2), oy = player.y - Math.floor(VIEW_H/2); ox = Math.max(0, Math.min(MAP_W-VIEW_W, ox)); oy = Math.max(0, Math.min(MAP_H-VIEW_H, oy)); return {ox, oy}; }
+
+function draw(){
+  updateHud();
+  const {ox, oy} = camOrigin();
+  ctx.fillStyle = '#071012'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  for(let vy=0; vy<VIEW_H; vy++){
+    for(let vx=0; vx<VIEW_W; vx++){
+      const mx = ox+vx, my = oy+vy; const t = MAP[my][mx];
+      if(t >= 0 && t < grassImgs.length){ const img = grassImgs[t]; if(img && img.complete) ctx.drawImage(img, vx*TILE, vy*TILE, TILE, TILE); else ctx.fillStyle = '#3c7', ctx.fillRect(vx*TILE, vy*TILE, TILE, TILE); }
+      else if(t === TILE_TYPE.VILLAGE){ const img = tileImgs.village; if(img && img.complete) ctx.drawImage(img, vx*TILE, vy*TILE, TILE, TILE); else ctx.fillStyle='#aa8', ctx.fillRect(vx*TILE, vy*TILE, TILE, TILE); }
+      else if(t === TILE_TYPE.ROCK){ const img = tileImgs.rock; if(img && img.complete) ctx.drawImage(img, vx*TILE, vy*TILE, TILE, TILE); else ctx.fillStyle='#777', ctx.fillRect(vx*TILE, vy*TILE, TILE, TILE); }
+      else if(t === TILE_TYPE.WATER){ const img = tileImgs.water; if(img && img.complete) ctx.drawImage(img, vx*TILE, vy*TILE, TILE, TILE); else ctx.fillStyle='#18a', ctx.fillRect(vx*TILE, vy*TILE, TILE, TILE); }
+      else if(t === TILE_TYPE.HEAL){ ctx.fillStyle = '#103'; ctx.fillRect(vx*TILE, vy*TILE, TILE, TILE); ctx.fillStyle = '#6f6'; ctx.beginPath(); ctx.arc(vx*TILE+TILE/2, vy*TILE+TILE/2, TILE/4, 0, Math.PI*2); ctx.fill(); }
+    }
+  }
+  // enemies
+  for(const e of enemies){
+    const ex = (e.x - ox)*TILE, ey = (e.y - oy)*TILE;
+    ctx.fillStyle = e.color || '#f55'; ctx.fillRect(ex+6, ey+6, 20, 20);
+    const hpPct = Math.max(0, e.hp / e.maxHp); ctx.fillStyle='#000'; ctx.fillRect(ex+4, ey+2, TILE-8, 4); ctx.fillStyle='#f55'; ctx.fillRect(ex+4, ey+2, Math.floor((TILE-8)*hpPct), 4);
+  }
+  // indicators
+  for(let i=attackIndicators.length-1;i>=0;i--){ const ind=attackIndicators[i]; const px=(ind.x-ox)*TILE, py=(ind.y-oy)*TILE; ctx.globalAlpha = Math.max(0.15, ind.life/20); ctx.fillStyle = ind.color; ctx.fillRect(px, py, TILE, TILE); ctx.globalAlpha = 1; ind.life--; if(ind.life<=0) attackIndicators.splice(i,1); }
+  // player
+  const {ox:cx, oy:cy} = camOrigin();
+  const px = (player.x - cx) * TILE;
+  const py = (player.y - cy) * TILE - (player.frame % 2 === 0 ? 2 : 0);
+  const frames = playerFrames[player.cls] && playerFrames[player.cls][player.dir] ? playerFrames[player.cls][player.dir] : [];
+  const im = frames.length ? frames[player.frame % frames.length] : null;
+  if(im && im.complete) ctx.drawImage(im, px, py, TILE, TILE); else { ctx.fillStyle='#ff0'; ctx.fillRect(px+8, py+8, 16, 16); }
+  // floating
+  for(let i=floatingTexts.length-1;i>=0;i--){ const f=floatingTexts[i]; ctx.globalAlpha=f.life/40; ctx.fillStyle=f.color; ctx.font="14px Meiryo"; ctx.fillText(f.text, f.x, f.y); ctx.globalAlpha=1; f.y-=0.6; f.life--; if(f.life<=0) floatingTexts.splice(i,1); }
+}
+
+/*--- 当たり判定/ユーティリティ ---*/
+function is_block(x,y){ if(x<0||y<0||x>=MAP_W||y>=MAP_H) return true; const t=MAP[y][x]; return t === TILE_TYPE.ROCK || t === TILE_TYPE.WATER; }
+function enemyAt(x,y){ return enemies.find(e => e.x === x && e.y === y); }
+function dirVector(dir){ if(dir==='up') return {dx:0,dy:-1}; if(dir==='down') return {dx:0,dy:1}; if(dir==='left') return {dx:-1,dy:0}; return {dx:1,dy:0}; }
+
+/*--- 攻撃処理 ---*/
+// 通常攻撃: 前方1マス
+function playerAttack(){
+  if(player.atkCooldown>0) return;
+  player.atkCooldown = 8;
+  const v = dirVector(player.dir);
+  const tx = player.x + v.dx, ty = player.y + v.dy;
+  addIndicatorLine(tx, ty, 'rgba(255,200,100,0.9)', 12);
+  const targets = enemies.filter(e => e.x === tx && e.y === ty);
+  if(targets.length === 0){ showFloatingText("空振り", (canvas.width/2)-10, 40, '#ccc'); return; }
+  for(const target of targets){
+    const dmg = Math.max(1, player.atk + (Math.floor(Math.random()*3)-1));
+    target.hp -= dmg;
+    showFloatingText("-"+dmg, (tx - camOrigin().ox)*TILE + 12, (ty - camOrigin().oy)*TILE + 16, '#f88');
+    if(target.hp <= 0){ enemies = enemies.filter(e => e.id !== target.id); xpGain(target.xpReward); showFloatingText("倒した！ +" + target.xpReward + "XP", (tx - camOrigin().ox)*TILE + 8, (ty - camOrigin().oy)*TILE + 8, '#9f9'); if(Math.random()<0.4) spawnEnemy(); }
+  }
+}
+
+// 勇者: 前方1〜3マスを対象に範囲ダメージ（周辺はそのマスにいる全ての敵に判定）
+function heroSlash3(){
+  if(player.atkCooldown>0) return;
+  if(player.cls !== 'hero'){ showFloatingText("勇者にだけ使用可", canvas.width/2-30, 40, '#ccc'); return; }
+  player.atkCooldown = 14;
+  const v = dirVector(player.dir);
+  for(let i=1;i<=3;i++){
+    const tx = player.x + v.dx * i, ty = player.y + v.dy * i;
+    addIndicatorLine(tx, ty, 'rgba(255,120,50,0.95)', 18);
+    const targets = enemies.filter(e => e.x === tx && e.y === ty);
+    for(const target of targets){
+      const dmg = Math.max(1, player.atk + (Math.floor(Math.random()*3)-1));
+      target.hp -= dmg;
+      showFloatingText("-"+dmg, (tx - camOrigin().ox)*TILE + 12, (ty - camOrigin().oy)*TILE + 16, '#f88');
+      if(target.hp <= 0){ enemies = enemies.filter(e => e.id !== target.id); xpGain(target.xpReward); showFloatingText("倒した！ +" + target.xpReward + "XP", (tx - camOrigin().ox)*TILE + 8, (ty - camOrigin().oy)*TILE + 8, '#9f9'); }
+    }
+  }
+}
+
+// 魔法使い: 仕様変更 — マップ上の自分以外のマスからランダムで"3つ"選んで攻撃（範囲ダメージ）
+function wizardRanged4(){
+  if(player.atkCooldown>0) return;
+  if(player.cls !== 'wizard'){ showFloatingText("魔法使いだけ使用可", canvas.width/2-30, 40, '#ccc'); return; }
+  player.atkCooldown = 16;
+  // pick 3 random distinct tiles on map excluding player's tile
+  const picks = new Set();
+  while(picks.size < 3){
+    const rx = Math.floor(Math.random()*MAP_W), ry = Math.floor(Math.random()*MAP_H);
+    if(rx === player.x && ry === player.y) continue;
+    picks.add(rx + ',' + ry);
+  }
+  for(const s of picks){
+    const [tx,ty] = s.split(',').map(Number);
+    // indicator along path (visual)
+    addIndicatorLine(tx, ty, 'rgba(80,200,255,0.95)', 22);
+    // area damage: manhattan dist <=1
+    const aoe = enemies.filter(e => Math.abs(e.x - tx) + Math.abs(e.y - ty) <= 1);
+    for(const target of aoe){
+      const dmg = Math.max(1, player.atk + 3 + (Math.floor(Math.random()*4)-2));
+      target.hp -= dmg;
+      showFloatingText("-"+dmg, (target.x - camOrigin().ox)*TILE + 12, (target.y - camOrigin().oy)*TILE + 16, '#9cf');
+      if(target.hp <= 0){ enemies = enemies.filter(e => e.id !== target.id); xpGain(target.xpReward); showFloatingText("倒した！ +" + target.xpReward + "XP", (target.x - camOrigin().ox)*TILE + 8, (target.y - camOrigin().oy)*TILE + 8, '#9f9'); if(Math.random()<0.4) spawnEnemy(); }
+    }
+  }
+}
+
+// 暗殺者: 前方8マス目にいる敵を一撃必殺（Vキー）
+function assassinExecute(){
+  if(player.atkCooldown>0) return;
+  if(player.cls !== 'assassin'){ showFloatingText("暗殺者だけ使用可", canvas.width/2-30, 40, '#ccc'); return; }
+  player.atkCooldown = 18;
+  const v = dirVector(player.dir);
+  const tx = player.x + v.dx * 8, ty = player.y + v.dy * 8;
+  addIndicatorLine(tx, ty, 'rgba(40,40,40,0.95)', 22);
+  const target = enemyAt(tx, ty);
+  if(!target){ showFloatingText("対象がいない", canvas.width/2-10, 40, '#ccc'); return; }
+  // instant kill
+  enemies = enemies.filter(e => e.id !== target.id);
+  showFloatingText("暗殺！ +" + target.xpReward + "XP", (tx - camOrigin().ox)*TILE + 8, (ty - camOrigin().oy)*TILE + 8, '#f9d');
+  xpGain(target.xpReward);
+  if(Math.random()<0.4) spawnEnemy();
+}
+
+/*--- 敵行動 ---*/
+function enemyTick(){
+  for(const e of enemies){
+    e.tick = (e.tick || 0) + 1;
+    if(e.tick % 3 !== 0) continue;
+    if(Math.abs(e.x - player.x) + Math.abs(e.y - player.y) === 1){
+      if(Math.random() < 0.5){
+        const dmg = Math.max(1, e.atk + (Math.floor(Math.random()*2)-1));
+        player.hp = Math.max(0, player.hp - dmg);
+        showFloatingText("-"+dmg, canvas.width/2, 30, '#f55');
+        if(player.hp <= 0){
+          msgEl.textContent = "やられた... リスポーンします（レベル維持）";
+          player.hp = player.maxHp;
+          player.x = Math.floor(MAP_W/2); player.y = Math.floor(MAP_H/2);
+          persistClassStats();
+        }
+      }
+      continue;
+    }
+    const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
+    let nx = e.x, ny = e.y;
+    if(dist <= 6 && Math.random() < 0.7){
+      if(e.x < player.x) nx++;
+      else if(e.x > player.x) nx--;
+      if(e.y < player.y) ny++;
+      else if(e.y > player.y) ny--;
+      if(Math.random()<0.5){ ny = e.y; } else { nx = e.x; }
+    } else {
+      const dir = Math.floor(Math.random()*4);
+      if(dir===0) nx = e.x+1;
+      if(dir===1) nx = e.x-1;
+      if(dir===2) ny = e.y+1;
+      if(dir===3) ny = e.y-1;
+    }
+    if(!is_block(nx,ny) && !enemyAt(nx,ny) && !(nx===player.x && ny===player.y)){ e.x = nx; e.y = ny; }
+  }
+}
+
+/*--- 移動・バンプ攻撃 ---*/
+function attemptMove(nx, ny){
+  if(is_block(nx, ny)) { msgEl.textContent = "進めない！"; return false; }
+  const e = enemyAt(nx, ny);
+  if(e){
+    const dmg = Math.max(1, Math.floor(player.atk/2));
+    e.hp -= dmg;
+    showFloatingText("-"+dmg, (nx - camOrigin().ox)*TILE + 12, (ny - camOrigin().oy)*TILE + 16, '#f88');
+    if(e.hp <= 0){ enemies = enemies.filter(x=>x.id !== e.id); xpGain(e.xpReward); showFloatingText("倒した！ +" + e.xpReward + "XP", (nx - camOrigin().ox)*TILE + 8, (ny - camOrigin().oy)*TILE + 8, '#9f9'); }
+    return false;
+  }
+  player.x = nx; player.y = ny; player.tick = 6;
+  if(MAP[ny][nx] === TILE_TYPE.VILLAGE) { msgEl.textContent = "村に到着した！ (Zで入る)"; }
+  else { msgEl.textContent = "移動した。"; }
+  return true;
+}
+
+/*--- 入力 ---*/
+document.addEventListener('keydown', (e)=>{
+  if(e.key === ' '){ e.preventDefault(); playerAttack(); return; }
+  if(e.key === 'x' || e.key === 'X'){ heroSlash3(); return; }
+  if(e.key === 'c' || e.key === 'C'){ wizardRanged4(); return; }
+  if(e.key === 'v' || e.key === 'V'){ assassinExecute(); return; }
+  if(e.key === 'z' || e.key === 'Z'){
+    if(MAP[player.y][player.x] === TILE_TYPE.VILLAGE){
+      // 家に入る（別画面遷移） — クラスはクエリで渡す。ステータスは localStorage で管理しているため問題なし
+      const cls = encodeURIComponent(player.cls);
+      window.location.href = `/house/?cls=${cls}`;
+    }
+    return;
+  }
+  let moved=false;
+  if(e.key==='ArrowUp'){ player.dir='up'; moved = attemptMove(player.x, player.y-1); }
+  if(e.key==='ArrowDown'){ player.dir='down'; moved = attemptMove(player.x, player.y+1); }
+  if(e.key==='ArrowLeft'){ player.dir='left'; moved = attemptMove(player.x-1, player.y); }
+  if(e.key==='ArrowRight'){ player.dir='right'; moved = attemptMove(player.x+1, player.y); }
+  if(moved) draw();
+});
+
+/*--- ゲームループ ---*/
+setInterval(()=>{
+  if(player.atkCooldown > 0) player.atkCooldown--;
+  if(player.tick > 0){ player.tick--; player.frame++; }
+  // 回復タイル
+  const tUnder = MAP[player.y][player.x];
+  if(tUnder === TILE_TYPE.HEAL){
+    player.healTickCounter = (player.healTickCounter || 0) + 1;
+    if(player.healTickCounter % 5 === 0){
+      player.hp = Math.min(player.maxHp, player.hp + 3);
+      showFloatingText("+3", canvas.width/2, 40, '#6f6');
+    }
+  } else { player.healTickCounter = 0; }
+  enemyTick();
+  draw();
+}, 140);
+
+/*--- UIボタン（クラス切替） ---*/
+document.querySelectorAll('.class-btn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.class-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    player.cls = b.dataset.class;
+    applyClassStats(player.cls);
+    msgEl.textContent = b.textContent + " を選択しました。";
+    draw();
+  });
+});
+document.getElementById('btn-hero').classList.add('active');
+applyClassStats('hero');
+
+/*--- 初期化 ---*/
+function initAfterLoad(){
+  spawnInitialEnemies(10);
+  updateHud();
+  draw();
+  msgEl.textContent = "矢印キーで移動。Space=攻撃 X=勇者3連斬 C=魔法(3ランダム) V=暗殺(8マス暗殺) Z=村へ入る";
+}
+setInterval(()=>{ if(enemies.length < 12 && Math.random()<0.5) spawnEnemy(); }, 5000);
+</script>
+</body>
+</html>
