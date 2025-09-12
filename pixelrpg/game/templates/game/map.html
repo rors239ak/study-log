@@ -311,8 +311,13 @@ function draw(){
       const head = e.segments[0];
       const hx = (head.x - ox)*TILE, hy = (head.y - oy)*TILE;
       const hpPct = Math.max(0, e.hp / e.maxHp);
-      ctx.fillStyle='#000'; ctx.fillRect(hx+2, hy-6, TILE*3, 5);
-      ctx.fillStyle='#f55'; ctx.fillRect(hx+2, hy-6, Math.floor((TILE*3)*hpPct), 5);
+      // 幅を1タイル分に変更（中央揃え）
+      const hpW = TILE;
+      const hpX = hx + Math.floor((TILE - hpW) / 2);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(hpX, hy - 6, hpW, 5);
+      ctx.fillStyle = '#f55';
+      ctx.fillRect(hpX, hy - 6, Math.floor(hpW * hpPct), 5);
       continue;
     }
     // 既存の矩形敵描画（sizeX/sizeY 使用）
