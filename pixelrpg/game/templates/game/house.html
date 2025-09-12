@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>家の中 — Pixel RPG</title>
+<style>
+  body{background:#0b1020;color:#fff;font-family:Meiryo, sans-serif;text-align:center}
+  #wrap{width:480px;margin:20px auto}
+  canvas{background:#082218;display:block;margin:8px auto;border:2px solid #222}
+  #info{display:flex;justify-content:space-between;align-items:center}
+  button{padding:6px 10px;border-radius:6px;background:#1b1f34;color:#fff;border:1px solid #333;cursor:pointer}
+</style>
+</head>
+<body>
+  <div id="wrap">
+    <h2>家の中</h2>
+    <div id="info">
+      <div>クラス: <span id="cls-name"></span></div>
+      <div>
+        <button id="btn-exit">家から出る</button>
+      </div>
+    </div>
+    <canvas id="house" width="384" height="256"></canvas>
+    <div id="msg">家の中には経験値や回復アイテムが置いてあります。アイテムに乗ると獲得。</div>
+  </div>
+
+<script>
+const urlParams = new URLSearchParams(location.search);
+const cls = urlParams.get('cls') || 'hero';
+document.getElementById('cls-name').textContent = cls;
+const canvas = document.getElementById('house'); const ctx = canvas.getContext('2d');
+const TILE = 32; const W = 12, H = 8; // 12x8 tiles
+let player = {x: Math.floor(W/2), y: Math.floor(H/2), cls};
+function defaultStatsFor(cls){
+  if(cls==='hero') return {level:1,xp:0,xpToNext:100,maxHp:36,hp:36,atk:7};
+  if(cls==='wizard') return {level:1,xp:0,xpToNext:100,maxHp:28,hp:28,atk:9};
+  return {level:1,xp:0,xpToNext:100,maxHp:30,hp:30,atk:8};
+}
+function loadStats(cls){ const key='rpg_stats_'+cls; const raw=localStorage.getItem(key); if(raw) return JSON.parse(raw); const d=defaultStatsFor(cls); localStorage.setItem(key, JSON.stringify(d)); return d; }
+function saveStatsFor(cls, s){ localStorage.setItem('rpg_stats_'+cls, JSON.stringify(s)); }
+
+let stats = loadStats(cls);
+let items = []; // {x,y,type} type: 'xp' or 'heal'
+function randomPlaceItems(){
+  items = [];
+  const n = 6 + Math.floor(Math.random()*5);
+  for(let i=0;i<n;i++){
+    let rx,ry,tries=0;
+    do{ rx = Math.floor(Math.random()*W); ry = Math.floor(Math.random()*H); tries++; } while((rx===player.x && ry===player.y) && tries<100);
+    items.push({x:rx,y:ry, type: Math.random()<0.6 ? 'xp' : 'heal', value: Math.random()<0.6 ? (10+Math.floor(Math.random()*25)) : (10+Math.floor(Math.random()*20))});
+  }
+}
+randomPlaceItems();
+
+function draw(){
+  ctx.fillStyle='#07221a'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  // grid
+  for(let y=0;y<H;y++){
+    for(let x=0;x<W;x++){
+      ctx.strokeStyle = '#0b2b21'; ctx.strokeRect(x*TILE,y*TILE,TILE,TILE);
+    }
+  }
+  // items
+  for(const it of items){
+    const px = it.x*TILE, py = it.y*TILE;
+    if(it.type==='xp'){ ctx.fillStyle = '#ffda6b'; ctx.fillRect(px+6,py+6,20,20); ctx.fillStyle='#000'; ctx.fillText('XP', px+8, py+20); }
+    else { ctx.fillStyle = '#6f6'; ctx.beginPath(); ctx.arc(px+TILE/2, py+TILE/2, 10,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#033'; ctx.fillText('H', px+12, py+20); }
+  }
+  // player
+  ctx.fillStyle = '#ffd'; ctx.fillRect(player.x*TILE+6, player.y*TILE+6, 20, 20);
+  ctx.fillStyle='#fff'; ctx.fillText(`Lv ${stats.level}  HP ${stats.hp}/${stats.maxHp}`, 8, canvas.height - 6);
+}
+
+function pickup(){
+  for(let i=items.length-1;i>=0;i--){
+    const it = items[i];
+    if(it.x === player.x && it.y === player.y){
+      if(it.type === 'xp'){
+        stats.xp += it.value;
+        // level up loop
+        while(stats.xp >= stats.xpToNext){ stats.xp -= stats.xpToNext; stats.level += 1; stats.maxHp += 8; stats.atk += 2; stats.hp = stats.maxHp; stats.xpToNext = Math.floor(stats.xpToNext * 1.4); }
+        document.getElementById('msg').textContent = `XP +${it.value} を獲得！`;
+      } else {
+        stats.hp = Math.min(stats.maxHp, stats.hp + it.value);
+        document.getElementById('msg').textContent = `回復 +${it.value}`;
+      }
+      items.splice(i,1);
+      saveStatsFor(cls, stats);
+    }
+  }
+  draw();
+}
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='ArrowUp'){ if(player.y>0) player.y--; }
+  if(e.key==='ArrowDown'){ if(player.y<H-1) player.y++; }
+  if(e.key==='ArrowLeft'){ if(player.x>0) player.x--; }
+  if(e.key==='ArrowRight'){ if(player.x<W-1) player.x++; }
+  pickup();
+});
+
+document.getElementById('btn-exit').addEventListener('click', ()=>{ location.href = '/'; });
+
+draw();
+</script>
+</body>
+</html>
